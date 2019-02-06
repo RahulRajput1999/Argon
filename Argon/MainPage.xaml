@@ -10,30 +10,42 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Page.Resources>
-        <DataTemplate x:Key="Media" x:DataType="model:MediaFile" >
-            <StackPanel x:Name="mypanel">
-                <Image Source="{x:Bind Thumb.Source}" Height="100" Width="100"/>
-                <TextBlock Text="{x:Bind Name}"/>
-                <TextBlock Text="{x:Bind Path}"/>
+        <DataTemplate x:Key="Media" x:DataType="model:MediaFile">
+            <StackPanel x:Name="mypanel" Height="200" Width="250">
+                <Border Height="150" Width="250" BorderThickness="5,5,5,5" Background="Black">
+                    <Image Source="{x:Bind Thumb.Source}" Height="150" Width="250"/>
+                </Border>
+                <TextBlock MaxLines="2" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Bind Title}" Margin="0,0,0,10"/>
+                <TextBlock Visibility="Collapsed" Text="{x:Bind Name}"/>
+                <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
             </StackPanel>
         </DataTemplate>
     </Page.Resources>
 
     <Grid>
-        <CommandBar DefaultLabelPosition="Right">
-            <AppBarButton x:Name="VideoLibrary" Icon="Video" Label="Videos" Click="VideoLibrary_Click" />
-            <AppBarButton x:Name="AudioLibrary" Icon="Audio" Label="Music" Click="AudioLibrary_Click"/>
-            <AppBarSeparator/>
-            <AppBarButton Icon="Folder" Label="Browse" Click="AppBarButton_Click"/>
-            <AppBarButton Icon="Library" Label="Stream" Click="AppBarButton_Click"/>
-            <AppBarButton Icon="Find" Label="Search" Click="AppBarButton_Click"/>
+        <NavigationView x:Name="NavigationPanel" SelectionChanged="NavigationView_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Videos" x:Name="videos" Tag="1" Icon="Video"></NavigationViewItem>
+                <NavigationViewItem Content="Music" x:Name="music" Tag="2" Icon="Audio"></NavigationViewItem>
+                <NavigationViewItem Content="Browse" x:Name="browse" Icon="Folder"></NavigationViewItem>
 
-            <CommandBar.SecondaryCommands>
-                <AppBarButton Icon="Setting" Label="Settings" Click="AppBarButton_Click"/>
-                <AppBarButton Icon="Contact" Label="About" Click="AppBarButton_Click"/>
-            </CommandBar.SecondaryCommands>
-        </CommandBar>
-        <GridView Grid.Column="4" ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" Width="1432" Height="877" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/>
+            </NavigationView.MenuItems>
+            <!--CommandBar DefaultLabelPosition="Right">
+                <AppBarButton x:Name="VideoLibrary" Icon="Video" Label="Videos" Click="VideoLibrary_Click" />
+                <AppBarButton x:Name="AudioLibrary" Icon="Audio" Label="Music" Click="AudioLibrary_Click"/>
+                <AppBarSeparator/>
+                <AppBarButton x:Name="Browse" Icon="Folder" Label="Browse" Click="Browse_Click"/>
+                <AppBarButton Icon="Library" Label="Stream" Click="AppBarButton_Click"/>
+                <AppBarButton Icon="Find" Label="Search" Click="AppBarButton_Click"/>
+
+                <CommandBar.SecondaryCommands>
+                    <AppBarButton Icon="Setting" Label="Settings" Click="AppBarButton_Click"/>
+                    <AppBarButton Icon="Contact" Label="About" Click="AppBarButton_Click"/>
+                </CommandBar.SecondaryCommands>
+            </-->
+            <GridView Grid.Column="4" ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" Height="877" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/>
+
+        </NavigationView>
 
     </Grid>
 </Page>

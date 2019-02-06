@@ -48,7 +48,6 @@ namespace Argon
             var stream = await storageFile.OpenAsync(FileAccessMode.Read);
             mediaElement.SetSource(stream, storageFile.ContentType);
             mediaElement.Play();
-             
         }
     }
 }

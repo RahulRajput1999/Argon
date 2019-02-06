@@ -42,11 +42,13 @@ namespace Argon
             {
                 if((String)local.Values["lastState"] == "video")
                 {
-                    LoadVideos();
+                    NavigationPanel.SelectedItem = NavigationPanel.MenuItems[0];
+                    //LoadVideos();
                 }
                 else
                 {
-                    LoadAudios();
+                    NavigationPanel.SelectedItem = NavigationPanel.MenuItems[1];
+                    //LoadAudios();
                 }
             }
         }
@@ -71,9 +73,15 @@ namespace Argon
                         BitmapImage bitmapImage = new BitmapImage();
                         bitmapImage.SetSource(thumbnail);
                         MediaFile o1 = new VideoFile();
+                        VideoProperties videoProperties = await f.Properties.GetVideoPropertiesAsync();
                         Image i = new Image();
                         i.Source = bitmapImage;
                         o1.Thumb = i;
+                        o1.Title = f.Name;
+                        if (videoProperties.Title != "")
+                        {
+                            o1.Title = videoProperties.Title;
+                        }
                         o1.Name = f.Name;
                         o1.Path = "VideoLibrary";
                         FileHolder.Items.Add(o1);
@@ -102,8 +110,14 @@ namespace Argon
                         bitmapImage.SetSource(thumbnail);
                         MediaFile o1 = new AudioFile();
                         Image i = new Image();
+                        MusicProperties musicProperties = await f.Properties.GetMusicPropertiesAsync();
                         i.Source = bitmapImage;
                         o1.Thumb = i;
+                        o1.Title = f.Name;
+                        if (musicProperties.Title != "")
+                        {
+                            o1.Title = musicProperties.Title;
+                        }
                         o1.Name = f.Name;
                         o1.Path = "MusicLibrary";
                         FileHolder.Items.Add(o1);
@@ -131,6 +145,24 @@ namespace Argon
             MediaFile file = (MediaFile)e.ClickedItem;
             Frame.Navigate(typeof(Player),file);
             
+        }
+
+        private void Browse_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(SideNavEx));
+        }
+
+        private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        {
+            string item = ((NavigationViewItem)args.SelectedItem).Tag.ToString();
+            if(item == "1")
+            {
+                LoadVideos();
+            }
+            else if(item == "2")
+            {
+                LoadAudios();
+            }
         }
     }
 

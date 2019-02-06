@@ -9,10 +9,16 @@ namespace Argon.Model
 {
     public class MediaFile
     {
+        private string title;
         private string name;
         private string path;
         private Image thumb;
 
+        public string Title
+        {
+            get { return this.title; }
+            set { this.title = value; }
+        }
         public string Name
         {
             get { return this.name; }

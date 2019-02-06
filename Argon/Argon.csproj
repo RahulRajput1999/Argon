@@ -129,6 +129,9 @@
       <DependentUpon>Player.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SideNavEx.xaml.cs">
+      <DependentUpon>SideNavEx.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -195,6 +198,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Player.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SideNavEx.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
