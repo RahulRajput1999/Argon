@@ -33,18 +33,30 @@ namespace Argon
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            MediaFile file = (MediaFile)e.Parameter;
+            MediaFile file;
             StorageFile storageFile;
             StorageFolder storageFolder;
-            if (file.Path == "MusicLibrary")
+            if (e.Parameter.GetType() == typeof(MediaFile) || e.Parameter.GetType() == typeof(VideoFile) || e.Parameter.GetType() == typeof(AudioFile))
             {
-                storageFolder = KnownFolders.MusicLibrary;
+                file = (MediaFile)e.Parameter;
+                if (file.Path == "MusicLibrary")
+                {
+                    storageFolder = KnownFolders.MusicLibrary;
+                    storageFile = await storageFolder.GetFileAsync(file.Name);
+                }
+                else if (file.Path == "VideoLibray")
+                {
+                    storageFolder = KnownFolders.VideosLibrary;
+                    storageFile = await storageFolder.GetFileAsync(file.Name);
+                }
+                else
+                {
+                    storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
+                }
+
             }
             else
-            {
-                storageFolder = KnownFolders.VideosLibrary;
-            }
-            storageFile = await storageFolder.GetFileAsync(file.Name);
+                storageFile = (StorageFile)e.Parameter;
             var stream = await storageFile.OpenAsync(FileAccessMode.Read);
             mediaElement.SetSource(stream, storageFile.ContentType);
             mediaElement.Play();

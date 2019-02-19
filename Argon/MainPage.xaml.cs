@@ -27,6 +27,7 @@ namespace Argon
     public sealed partial class MainPage : Page
     {
         ApplicationDataContainer local;
+        List<string> videoFormat = new List<string>() { ".mov", ".mp4" };
         public MainPage()
         {
             this.InitializeComponent();
@@ -88,6 +89,45 @@ namespace Argon
                     }
                 }
             }
+
+            int count = int.Parse(local.Values["CountFolder"].ToString());
+            for (int i = 1; i <= count; i++)
+            {
+                string foldnm = "folder" + i.ToString();
+                string token = local.Values[foldnm].ToString();
+                sf = await Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.GetFolderAsync(token);
+                fileList = await sf.GetFilesAsync();
+                foreach (StorageFile f in fileList)
+                {
+                    if (videoFormat.FindIndex(x => x.Equals(f.FileType, StringComparison.OrdinalIgnoreCase)) != -1)
+                    {
+                        const uint size = 100;
+                        using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
+                        {
+                            // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
+                            // (which may be returned as a fallback if the file does not provide album art) 
+                            if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
+                            {
+                                BitmapImage bitmapImage = new BitmapImage();
+                                bitmapImage.SetSource(thumbnail);
+                                MediaFile o1 = new VideoFile();
+                                VideoProperties videoProperties = await f.Properties.GetVideoPropertiesAsync();
+                                Image i1 = new Image();
+                                i1.Source = bitmapImage;
+                                o1.Thumb = i1;
+                                o1.Title = f.Name;
+                                if (videoProperties.Title != "")
+                                {
+                                    o1.Title = videoProperties.Title;
+                                }
+                                o1.Name = f.Name;
+                                o1.Path = f.Path;
+                                FileHolder.Items.Add(o1);
+                            }
+                        }
+                    }
+                }
+            }
         }
         public async void LoadAudios()
         {
@@ -125,6 +165,33 @@ namespace Argon
                 }
             }
         }
+
+        public async void Browse()
+        {
+            var picker = new Windows.Storage.Pickers.FileOpenPicker();
+            picker.FileTypeFilter.Add("*");
+            StorageFile file = await picker.PickSingleFileAsync();
+            if (file != null)
+            {
+                Frame.Navigate(typeof(Player), file);
+            }
+        }
+
+        public async void AddLibary()
+        {
+            var picker = new Windows.Storage.Pickers.FolderPicker();
+            picker.FileTypeFilter.Add("*");
+            StorageFolder folder = await picker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                string token = Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Add(folder);
+                int tmp = int.Parse(local.Values["CountFolder"].ToString());
+                local.Values["CountFolder"] = tmp + 1;
+                string foldnm = "folder" + local.Values["CountFolder"].ToString();
+                local.Values[foldnm] = token;
+            }
+        }
+
         private void AppBarButton_Click(object sender, RoutedEventArgs e)
         {
 
@@ -162,6 +229,14 @@ namespace Argon
             else if(item == "2")
             {
                 LoadAudios();
+            }
+            else if (item == "3")
+            {
+                Browse();
+            }
+            else if (item == "4")
+            {
+                AddLibary();
             }
         }
     }
