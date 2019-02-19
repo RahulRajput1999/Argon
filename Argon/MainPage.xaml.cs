@@ -177,7 +177,7 @@ namespace Argon
             }
         }
 
-        public async void AddLibary()
+        public async void AddLibrary()
         {
             var picker = new Windows.Storage.Pickers.FolderPicker();
             picker.FileTypeFilter.Add("*");
@@ -236,7 +236,7 @@ namespace Argon
             }
             else if (item == "4")
             {
-                AddLibary();
+                AddLibrary();
             }
         }
     }

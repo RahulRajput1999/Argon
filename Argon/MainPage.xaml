@@ -28,7 +28,7 @@
                 <NavigationViewItem Content="Videos" x:Name="videos" Tag="1" Icon="Video"></NavigationViewItem>
                 <NavigationViewItem Content="Music" x:Name="music" Tag="2" Icon="Audio"></NavigationViewItem>
                 <NavigationViewItem Content="Browse" x:Name="browse" Tag="3" Icon="Folder"></NavigationViewItem>
-                <NavigationViewItem Content="Add Libary" x:Name="addLibary" Tag="4" Icon="Folder"></NavigationViewItem>
+                <NavigationViewItem Content="Add Library" x:Name="addLibrary" Tag="4" Icon="Folder"></NavigationViewItem>
 
             </NavigationView.MenuItems>
             <!--CommandBar DefaultLabelPosition="Right">

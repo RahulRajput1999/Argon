@@ -44,7 +44,7 @@ namespace Argon
                     storageFolder = KnownFolders.MusicLibrary;
                     storageFile = await storageFolder.GetFileAsync(file.Name);
                 }
-                else if (file.Path == "VideoLibray")
+                else if (file.Path == "VideoLibrary")
                 {
                     storageFolder = KnownFolders.VideosLibrary;
                     storageFile = await storageFolder.GetFileAsync(file.Name);
