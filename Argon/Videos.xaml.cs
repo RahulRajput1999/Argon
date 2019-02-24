@@ -27,10 +27,11 @@ namespace Argon
     public sealed partial class Videos : Page
     {
         ApplicationDataContainer local;
-        List<string> videoFormat = new List<string>() { ".mov", ".mp4" };
+        List<string> videoFormat = new List<string>() { ".mov", ".mp4", ".mkv" };
         public Videos()
         {
             this.InitializeComponent();
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
             local = ApplicationData.Current.LocalSettings;
             LoadVideos();
             
@@ -78,7 +79,6 @@ namespace Argon
             var superGrid = superNav.Parent as Grid;
             var superPage = superGrid.Parent as MainPage;
             var superParent = superPage.Parent as Frame;
-
             if (superParent != null)
             {
                 superParent.Navigate(typeof(Player), file);

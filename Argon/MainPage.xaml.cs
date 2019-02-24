@@ -33,8 +33,14 @@ namespace Argon
             this.InitializeComponent();
             local = ApplicationData.Current.LocalSettings;
             NavigationPanel.IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed;
+            Frame rootFrame = Window.Current.Content as Frame;
+            rootFrame.CacheSize = 2;
             if (local.Values["CountFolder"] == null)
+            {
                 local.Values["CountFolder"] = 0;
+                Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Clear();
+            }
+            
             if (local.Values["lastState"] == null)
             {
                 local.Values["lastState"] = "video";

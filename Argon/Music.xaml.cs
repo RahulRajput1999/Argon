@@ -31,6 +31,7 @@ namespace Argon
         public Music()
         {
             this.InitializeComponent();
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
             local = ApplicationData.Current.LocalSettings;
             LoadAudios();
         }
@@ -98,7 +99,16 @@ namespace Argon
         }
 
         private async void SongList_ItemClick(object sender, ItemClickEventArgs e)
-        { 
+        {
+            Windows.Media.Playback.MediaPlaybackState i;
+            if (mediaElement.MediaPlayer != null)
+            {
+                i = mediaElement.MediaPlayer.PlaybackSession.PlaybackState;
+                if (i == Windows.Media.Playback.MediaPlaybackState.Playing)
+                {
+                    
+                }
+            }
             StorageFile storageFile;
             StorageFolder storageFolder;
             MediaFile file = (MediaFile)e.ClickedItem;
