@@ -1,0 +1,34 @@
+﻿<Page
+    x:Class="Argon.Videos"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:model="using:Argon.Model"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <DataTemplate x:Key="Media" x:DataType="model:MediaFile">
+            <StackPanel x:Name="mypanel" Height="200" Width="250">
+                <Border Height="150" Width="250" BorderThickness="5,5,5,5" Background="Black">
+                    <Image Source="{x:Bind Thumb.Source}" Height="150" Width="250"/>
+                </Border>
+                <TextBlock MaxLines="2" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Bind Title}" Margin="0,0,0,10"/>
+                <TextBlock Visibility="Collapsed" Text="{x:Bind Name}"/>
+                <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
+            </StackPanel>
+        </DataTemplate>
+    </Page.Resources>
+    <Grid>
+        <CommandBar DefaultLabelPosition="Right">
+            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click"></AppBarButton>
+            <AppBarButton Icon="Add" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"></AppBarButton>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
+            </CommandBar.SecondaryCommands>
+        </CommandBar>
+        <GridView Grid.Column="4" ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" Height="877" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/>
+
+    </Grid>
+</Page>

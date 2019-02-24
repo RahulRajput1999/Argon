@@ -15,6 +15,8 @@ using Windows.UI.Xaml.Navigation;
 using Argon.Model;
 using Windows.Storage;
 using Windows.UI.Core;
+using Windows.Media.Core;
+using Windows.System.Display;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -25,13 +27,17 @@ namespace Argon
     /// </summary>
     public sealed partial class Player : Page
     {
+        private DisplayRequest appDisplayRequest = null;
         public Player()
         {
             this.InitializeComponent();
+            SystemNavigationManager.GetForCurrentView().BackRequested += Back_Pressed;
         }
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
+            appDisplayRequest = new DisplayRequest();
+            appDisplayRequest.RequestActive();
             base.OnNavigatedTo(e);
             MediaFile file;
             StorageFile storageFile;
@@ -53,13 +59,26 @@ namespace Argon
                 {
                     storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
                 }
-
+                Console.WriteLine(storageFile.Path);
+                mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+                mediaElement.AutoPlay = true;
+                mediaElement.MediaPlayer.Play();
+                //mediaElement.PosterSource = 
+                
             }
             else
                 storageFile = (StorageFile)e.Parameter;
             var stream = await storageFile.OpenAsync(FileAccessMode.Read);
-            mediaElement.SetSource(stream, storageFile.ContentType);
-            mediaElement.Play();
+            //mediaElement.SetSource(stream, storageFile.ContentType);
+            //mediaElement.Play();
+            
         }
+
+        private void Back_Pressed(object sender, BackRequestedEventArgs e) 
+        {
+            //appDisplayRequest.RequestRelease();
+            mediaElement.Source = null;
+        }
+
     }
 }

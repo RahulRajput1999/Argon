@@ -32,12 +32,14 @@ namespace Argon
         {
             this.InitializeComponent();
             local = ApplicationData.Current.LocalSettings;
+            NavigationPanel.IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed;
             if (local.Values["CountFolder"] == null)
                 local.Values["CountFolder"] = 0;
             if (local.Values["lastState"] == null)
             {
                 local.Values["lastState"] = "video";
-                LoadVideos();
+                NavigationPanel.SelectedItem = NavigationPanel.MenuItems[0];
+                //LoadVideos();
             }
             else
             {
@@ -53,86 +55,10 @@ namespace Argon
                 }
             }
         }
-
-        public async void LoadVideos()
-        {
-            local.Values["lastState"] = "video";
-            FileHolder.Items.Clear();
-            StorageFolder sf = KnownFolders.VideosLibrary;
-            //StorageFolder sf = await DownloadsFolder.
-            IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
-            const ThumbnailMode thumbnailMode = ThumbnailMode.MusicView;
-            foreach (StorageFile f in fileList)
-            {
-                const uint size = 100;
-                using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
-                {
-                    // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
-                    // (which may be returned as a fallback if the file does not provide album art) 
-                    if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
-                    {
-                        BitmapImage bitmapImage = new BitmapImage();
-                        bitmapImage.SetSource(thumbnail);
-                        MediaFile o1 = new VideoFile();
-                        VideoProperties videoProperties = await f.Properties.GetVideoPropertiesAsync();
-                        Image i = new Image();
-                        i.Source = bitmapImage;
-                        o1.Thumb = i;
-                        o1.Title = f.Name;
-                        if (videoProperties.Title != "")
-                        {
-                            o1.Title = videoProperties.Title;
-                        }
-                        o1.Name = f.Name;
-                        o1.Path = "VideoLibrary";
-                        FileHolder.Items.Add(o1);
-                    }
-                }
-            }
-
-            int count = int.Parse(local.Values["CountFolder"].ToString());
-            for (int i = 1; i <= count; i++)
-            {
-                string foldnm = "folder" + i.ToString();
-                string token = local.Values[foldnm].ToString();
-                sf = await Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.GetFolderAsync(token);
-                fileList = await sf.GetFilesAsync();
-                foreach (StorageFile f in fileList)
-                {
-                    if (videoFormat.FindIndex(x => x.Equals(f.FileType, StringComparison.OrdinalIgnoreCase)) != -1)
-                    {
-                        const uint size = 100;
-                        using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
-                        {
-                            // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
-                            // (which may be returned as a fallback if the file does not provide album art) 
-                            if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
-                            {
-                                BitmapImage bitmapImage = new BitmapImage();
-                                bitmapImage.SetSource(thumbnail);
-                                MediaFile o1 = new VideoFile();
-                                VideoProperties videoProperties = await f.Properties.GetVideoPropertiesAsync();
-                                Image i1 = new Image();
-                                i1.Source = bitmapImage;
-                                o1.Thumb = i1;
-                                o1.Title = f.Name;
-                                if (videoProperties.Title != "")
-                                {
-                                    o1.Title = videoProperties.Title;
-                                }
-                                o1.Name = f.Name;
-                                o1.Path = f.Path;
-                                FileHolder.Items.Add(o1);
-                            }
-                        }
-                    }
-                }
-            }
-        }
         public async void LoadAudios()
         {
             local.Values["lastState"] = "audio";
-            FileHolder.Items.Clear();
+            //FileHolder.Items.Clear();
             StorageFolder sf = KnownFolders.MusicLibrary;
             //StorageFolder sf = await DownloadsFolder.
             IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
@@ -160,46 +86,16 @@ namespace Argon
                         }
                         o1.Name = f.Name;
                         o1.Path = "MusicLibrary";
-                        FileHolder.Items.Add(o1);
+                        //FileHolder.Items.Add(o1);
                     }
                 }
             }
         }
 
-        public async void Browse()
-        {
-            var picker = new Windows.Storage.Pickers.FileOpenPicker();
-            picker.FileTypeFilter.Add("*");
-            StorageFile file = await picker.PickSingleFileAsync();
-            if (file != null)
-            {
-                Frame.Navigate(typeof(Player), file);
-            }
-        }
-
-        public async void AddLibrary()
-        {
-            var picker = new Windows.Storage.Pickers.FolderPicker();
-            picker.FileTypeFilter.Add("*");
-            StorageFolder folder = await picker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                string token = Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Add(folder);
-                int tmp = int.Parse(local.Values["CountFolder"].ToString());
-                local.Values["CountFolder"] = tmp + 1;
-                string foldnm = "folder" + local.Values["CountFolder"].ToString();
-                local.Values[foldnm] = token;
-            }
-        }
-
-        private void AppBarButton_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
+      
         private void VideoLibrary_Click(object sender, RoutedEventArgs e)
         {
-            LoadVideos();
+            //LoadVideos();
         }
 
         private void AudioLibrary_Click(object sender, RoutedEventArgs e)
@@ -213,32 +109,42 @@ namespace Argon
             Frame.Navigate(typeof(Player),file);
             
         }
-
-        private void Browse_Click(object sender, RoutedEventArgs e)
-        {
-            Frame.Navigate(typeof(SideNavEx));
-        }
-
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            string item = ((NavigationViewItem)args.SelectedItem).Tag.ToString();
-            if(item == "1")
+            if (args.IsSettingsSelected)
             {
-                LoadVideos();
+
             }
-            else if(item == "2")
+            else
             {
-                LoadAudios();
+                string item = ((NavigationViewItem)args.SelectedItem).Tag.ToString();
+                if (item == "1")
+                {
+                    var preNavPageType = ContentFrame.CurrentSourcePageType;
+                    var _page = typeof(Videos);
+                    if (!(_page is null) && !Type.Equals(preNavPageType, _page))
+                    {
+                        ContentFrame.Navigate(_page);
+                    }
+                    //LoadVideos();
+                }
+                else if (item == "2")
+                {
+                    var preNavPageType = ContentFrame.CurrentSourcePageType;
+                    var _page = typeof(Music);
+                    if (!(_page is null) && !Type.Equals(preNavPageType, _page))
+                    {
+                        ContentFrame.Navigate(_page);
+                    }
+                    
+                    //LoadAudios();
+                    
+                }
             }
-            else if (item == "3")
-            {
-                Browse();
-            }
-            else if (item == "4")
-            {
-                AddLibrary();
-            }
+            
         }
+
+        
     }
 
 }
