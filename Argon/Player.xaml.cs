@@ -60,18 +60,17 @@ namespace Argon
                     storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
                 }
                 Console.WriteLine(storageFile.Path);
-                mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
-                mediaElement.AutoPlay = true;
-                mediaElement.MediaPlayer.Play();
-                //mediaElement.PosterSource = 
-                
+
+
             }
             else
+            {
                 storageFile = (StorageFile)e.Parameter;
-            var stream = await storageFile.OpenAsync(FileAccessMode.Read);
-            //mediaElement.SetSource(stream, storageFile.ContentType);
-            //mediaElement.Play();
-            
+            }
+            mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+            mediaElement.AutoPlay = true;
+            mediaElement.MediaPlayer.Play();
+
         }
 
         private void Back_Pressed(object sender, BackRequestedEventArgs e) 
