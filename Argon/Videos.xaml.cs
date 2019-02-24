@@ -33,15 +33,23 @@ namespace Argon
             this.InitializeComponent();
             local = ApplicationData.Current.LocalSettings;
             LoadVideos();
+            
         }
+
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var picker = new Windows.Storage.Pickers.FileOpenPicker();
             picker.FileTypeFilter.Add("*");
             StorageFile file = await picker.PickSingleFileAsync();
-            if (file != null)
+            var page = grid.Parent as Videos;
+            var parent = page.Parent as Frame;
+            var superNav = parent.Parent as NavigationView;
+            var superGrid = superNav.Parent as Grid;
+            var superPage = superGrid.Parent as MainPage;
+            var superParent = superPage.Parent as Frame;
+            if (file != null && superParent != null)
             {
-                Frame.Navigate(typeof(Player), file);
+                superParent.Navigate(typeof(Player), file);
             }
         }
 
@@ -64,7 +72,17 @@ namespace Argon
         private void FileHolder_ItemClick(object sender, ItemClickEventArgs e)
         {
             MediaFile file = (MediaFile)e.ClickedItem;
-            Frame.Navigate(typeof(Player), file);
+            var page = grid.Parent as Videos;
+            var parent = page.Parent as Frame;
+            var superNav = parent.Parent as NavigationView;
+            var superGrid = superNav.Parent as Grid;
+            var superPage = superGrid.Parent as MainPage;
+            var superParent = superPage.Parent as Frame;
+
+            if (superParent != null)
+            {
+                superParent.Navigate(typeof(Player), file);
+            }
         }
         public async void LoadVideos()
         {

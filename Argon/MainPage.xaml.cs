@@ -38,19 +38,20 @@ namespace Argon
             if (local.Values["lastState"] == null)
             {
                 local.Values["lastState"] = "video";
-                NavigationPanel.SelectedItem = NavigationPanel.MenuItems[0];
-                //LoadVideos();
+                ContentFrame.Navigate(typeof(Videos), Frame);
             }
             else
             {
                 if((String)local.Values["lastState"] == "video")
                 {
                     NavigationPanel.SelectedItem = NavigationPanel.MenuItems[0];
+                    //ContentFrame.Navigate(typeof(Videos), Frame);
                     //LoadVideos();
                 }
                 else
                 {
                     NavigationPanel.SelectedItem = NavigationPanel.MenuItems[1];
+                    //ContentFrame.Navigate(typeof(Music), Frame);
                     //LoadAudios();
                 }
             }
@@ -103,12 +104,6 @@ namespace Argon
             LoadAudios();
         }
 
-        private void FileHolder_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            MediaFile file = (MediaFile)e.ClickedItem;
-            Frame.Navigate(typeof(Player),file);
-            
-        }
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
             if (args.IsSettingsSelected)

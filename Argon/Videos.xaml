@@ -20,7 +20,7 @@
             </StackPanel>
         </DataTemplate>
     </Page.Resources>
-    <Grid>
+    <Grid Name="grid">
         <CommandBar DefaultLabelPosition="Right">
             <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click"></AppBarButton>
             <AppBarButton Icon="Add" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"></AppBarButton>
