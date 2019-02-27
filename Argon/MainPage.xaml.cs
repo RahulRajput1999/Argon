@@ -35,9 +35,11 @@ namespace Argon
             NavigationPanel.IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed;
             Frame rootFrame = Window.Current.Content as Frame;
             rootFrame.CacheSize = 2;
-            if (local.Values["CountFolder"] == null)
+            
+            if (local.Values["CountMusic"] == null || local.Values["CountVideo"] == null)
             {
-                local.Values["CountFolder"] = 0;
+                local.Values["CountMusic"] = 0;
+                local.Values["CountVideo"] = 0;
                 Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Clear();
             }
             
@@ -61,53 +63,6 @@ namespace Argon
                     //LoadAudios();
                 }
             }
-        }
-        public async void LoadAudios()
-        {
-            local.Values["lastState"] = "audio";
-            //FileHolder.Items.Clear();
-            StorageFolder sf = KnownFolders.MusicLibrary;
-            //StorageFolder sf = await DownloadsFolder.
-            IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
-            const ThumbnailMode thumbnailMode = ThumbnailMode.MusicView;
-            foreach (StorageFile f in fileList)
-            {
-                const uint size = 100;
-                using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
-                {
-                    // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
-                    // (which may be returned as a fallback if the file does not provide album art) 
-                    if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
-                    {
-                        BitmapImage bitmapImage = new BitmapImage();
-                        bitmapImage.SetSource(thumbnail);
-                        MediaFile o1 = new AudioFile();
-                        Image i = new Image();
-                        MusicProperties musicProperties = await f.Properties.GetMusicPropertiesAsync();
-                        i.Source = bitmapImage;
-                        o1.Thumb = i;
-                        o1.Title = f.Name;
-                        if (musicProperties.Title != "")
-                        {
-                            o1.Title = musicProperties.Title;
-                        }
-                        o1.Name = f.Name;
-                        o1.Path = "MusicLibrary";
-                        //FileHolder.Items.Add(o1);
-                    }
-                }
-            }
-        }
-
-      
-        private void VideoLibrary_Click(object sender, RoutedEventArgs e)
-        {
-            //LoadVideos();
-        }
-
-        private void AudioLibrary_Click(object sender, RoutedEventArgs e)
-        {
-            LoadAudios();
         }
 
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -144,8 +99,6 @@ namespace Argon
             }
             
         }
-
-        
     }
 
 }
