@@ -28,6 +28,7 @@ namespace Argon
     {
         ApplicationDataContainer local;
         List<string> videoFormat = new List<string>() { ".mov", ".mp4" };
+		int myVar = 0;
         public MainPage()
         {
             this.InitializeComponent();
