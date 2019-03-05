@@ -23,9 +23,9 @@
     </Page.Resources>
     <Grid Name="grid">
         <CommandBar DefaultLabelPosition="Right">
-            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click"></AppBarButton>
             <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"></AppBarButton>
             <AppBarButton Icon="Add" x:Name="NewPlaylist" Label="New Playlist"></AppBarButton>
+            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Music" Click="BrowseButton_Click"></AppBarButton>
             <CommandBar.SecondaryCommands>
                 <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
             </CommandBar.SecondaryCommands>
