@@ -106,7 +106,7 @@ namespace Argon
                 i = mediaElement.MediaPlayer.PlaybackSession.PlaybackState;
                 if (i == Windows.Media.Playback.MediaPlaybackState.Playing)
                 {
-                    
+
                 }
             }
             StorageFile storageFile;
@@ -125,6 +125,11 @@ namespace Argon
             mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
             mediaElement.AutoPlay = true;
             mediaElement.MediaPlayer.Play();
+        }
+
+        private void MusicNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        {
+
         }
     }
 }

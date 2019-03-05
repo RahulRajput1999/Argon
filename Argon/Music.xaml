@@ -7,7 +7,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
     <Page.Resources>
         <DataTemplate x:Key="Media" x:DataType="model:MediaFile">
             <Grid HorizontalAlignment="Left" Width="1500">
@@ -25,27 +24,37 @@
     <Grid Name="grid">
         <CommandBar DefaultLabelPosition="Right">
             <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click"></AppBarButton>
-            <AppBarButton Icon="Add" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"></AppBarButton>
+            <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"></AppBarButton>
+            <AppBarButton Icon="Add" x:Name="NewPlaylist" Label="New Playlist"></AppBarButton>
             <CommandBar.SecondaryCommands>
                 <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
             </CommandBar.SecondaryCommands>
         </CommandBar>
-        <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,73,0,0" VerticalAlignment="Top" Height="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">
+        <NavigationView x:Name="MusicNavigation" PaneDisplayMode="Top" IsBackButtonVisible="Collapsed" Margin="0,40,0,-40" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsSettingsVisible="False" SelectionChanged="MusicNavigation_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="Songs" Content="Songs" Tag="1" Icon="Audio" IsSelected="True"/>
+                <NavigationViewItem x:Name="Albums" Content="Albums" Tag="2" Icon="Folder"/>
+                <NavigationViewItem x:Name="Artists" Content="Artists" Tag="3" Icon="Contact2"/>
+                <NavigationViewItem x:Name="Playlists" Content="Playlists" Tag="4" Icon="List"/>
+                
+            </NavigationView.MenuItems>
+        </NavigationView>
+        <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,80,0,100" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">
             <GridView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <ItemsWrapGrid HorizontalAlignment="Left" MaximumRowsOrColumns="1" Orientation="Horizontal" />
                 </ItemsPanelTemplate>
             </GridView.ItemsPanel>
         </GridView>
-        <MediaPlayerElement x:Name="mediaElement" HorizontalAlignment="Center" VerticalAlignment="Bottom" AreTransportControlsEnabled="True" Height="100" Margin="15,0,15,0">
+        <MediaPlayerElement Height="100" x:Name="mediaElement" HorizontalAlignment="Center" VerticalAlignment="Bottom" AreTransportControlsEnabled="True" Margin="15,0,15,0">
             <MediaPlayerElement.TransportControls>
                 <MediaTransportControls IsCompact="False"
-                                        IsFastForwardButtonVisible="True"
-                                        IsFastForwardEnabled="True"
-                                        IsFastRewindButtonVisible="True"
-                                        IsFastRewindEnabled="True"
-                                        IsPlaybackRateButtonVisible="True"
-                                        IsPlaybackRateEnabled="True"/>
+                                            IsFastForwardButtonVisible="True"
+                                            IsFastForwardEnabled="True"
+                                            IsFastRewindButtonVisible="True"
+                                            IsFastRewindEnabled="True"
+                                            IsPlaybackRateButtonVisible="True"
+                                            IsPlaybackRateEnabled="True"/>
             </MediaPlayerElement.TransportControls>
         </MediaPlayerElement>
     </Grid>
