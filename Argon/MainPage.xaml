@@ -11,7 +11,7 @@
 
     <Grid>
         
-        <NavigationView x:Name="NavigationPanel" SelectionChanged="NavigationView_SelectionChanged">
+        <NavigationView x:Name="NavigationPanel" SelectionChanged="NavigationView_SelectionChanged" >
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Videos" x:Name="videos" Tag="1" Icon="Video"></NavigationViewItem>
                 <NavigationViewItem Content="Music" x:Name="music" Tag="2" Icon="Audio"></NavigationViewItem>

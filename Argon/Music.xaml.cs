@@ -166,5 +166,10 @@ namespace Argon
             mediaElement.AutoPlay = true;
             mediaElement.MediaPlayer.Play();
         }
+
+        private void MusicNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        {
+
+        }
     }
 }
