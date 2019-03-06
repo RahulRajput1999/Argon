@@ -35,8 +35,6 @@
                 <NavigationViewItem x:Name="Songs" Content="Songs" Tag="1" Icon="Audio" IsSelected="True"/>
                 <NavigationViewItem x:Name="Albums" Content="Albums" Tag="2" Icon="Folder"/>
                 <NavigationViewItem x:Name="Artists" Content="Artists" Tag="3" Icon="Contact2"/>
-                <NavigationViewItem x:Name="Playlists" Content="Playlists" Tag="4" Icon="List"/>
-                
             </NavigationView.MenuItems>
         </NavigationView>
         <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,80,0,100" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">

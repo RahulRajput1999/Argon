@@ -15,6 +15,8 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Videos" x:Name="videos" Tag="1" Icon="Video"></NavigationViewItem>
                 <NavigationViewItem Content="Music" x:Name="music" Tag="2" Icon="Audio"></NavigationViewItem>
+                <NavigationViewItemSeparator></NavigationViewItemSeparator>
+                <NavigationViewItem Content="Playlists" x:Name="playlist" Tag="3" Icon="List"></NavigationViewItem>
             </NavigationView.MenuItems>
             <!--GridView Grid.Column="4" ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" Height="877" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/-->
             <Frame x:Name="ContentFrame" IsTabStop="True"/>

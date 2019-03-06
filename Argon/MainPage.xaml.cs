@@ -28,8 +28,6 @@ namespace Argon
     {
         ApplicationDataContainer local;
         List<string> videoFormat = new List<string>() { ".mov", ".mp4" };
-		var hardik = 0;
-		int myVar = 0;
         public MainPage()
         {
             this.InitializeComponent();
@@ -84,7 +82,6 @@ namespace Argon
                     {
                         ContentFrame.Navigate(_page);
                     }
-                    //LoadVideos();
                 }
                 else if (item == "2")
                 {
@@ -94,9 +91,15 @@ namespace Argon
                     {
                         ContentFrame.Navigate(_page);
                     }
-                    
-                    //LoadAudios();
-                    
+                }
+                else if (item == "3")
+                {
+                    var preNavPageType = ContentFrame.CurrentSourcePageType;
+                    var _page = typeof(Playlists);
+                    if (!(_page is null) && !Type.Equals(preNavPageType, _page))
+                    {
+                        ContentFrame.Navigate(_page);
+                    }
                 }
             }
             
