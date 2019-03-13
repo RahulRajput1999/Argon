@@ -15,6 +15,7 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Windows.Storage;
 
 namespace Argon
 {
@@ -124,6 +125,18 @@ namespace Argon
             var deferral = e.SuspendingOperation.GetDeferral();
             //TODO: Save application state and stop any background activity
             deferral.Complete();
+        }
+
+        protected override void OnFileActivated(FileActivatedEventArgs args)
+        {
+            Frame rootFrame = Window.Current.Content as Frame;
+            //var picker = new Windows.Storage.Pickers.FolderPicker();
+            //picker.FileTypeFilter.Add("*");
+            //StorageFolder folder = await picker.PickSingleFolderAsync();
+            foreach (var i in args.Files)
+            {
+                rootFrame.Navigate(typeof(Player), i);
+            }
         }
     }
 }
