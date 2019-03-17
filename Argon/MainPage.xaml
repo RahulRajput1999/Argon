@@ -20,6 +20,7 @@
                 <NavigationViewItem x:Name="Songs" Content="Songs" Tag="4" Icon="Audio" IsSelected="True"/>
                 <NavigationViewItem x:Name="Albums" Content="Albums" Tag="5" Icon="Folder"/>
                 <NavigationViewItem x:Name="Artists" Content="Artists" Tag="6" Icon="Contact2"/>
+                <NavigationViewItem Content="Genrate Subtitle" x:Name="GenSubtitle" Tag="7" Icon="List"></NavigationViewItem>
             </NavigationView.MenuItems>
             <!--GridView Grid.Column="4" ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" Height="877" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/-->
             <Frame x:Name="ContentFrame" IsTabStop="True"/>
