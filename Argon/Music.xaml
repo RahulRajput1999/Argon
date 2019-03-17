@@ -30,13 +30,6 @@
                 <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
             </CommandBar.SecondaryCommands>
         </CommandBar>
-        <NavigationView x:Name="MusicNavigation" PaneDisplayMode="Top" IsBackButtonVisible="Collapsed" Margin="0,40,0,-40" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsSettingsVisible="False" SelectionChanged="MusicNavigation_SelectionChanged">
-            <NavigationView.MenuItems>
-                <NavigationViewItem x:Name="Songs" Content="Songs" Tag="1" Icon="Audio" IsSelected="True"/>
-                <NavigationViewItem x:Name="Albums" Content="Albums" Tag="2" Icon="Folder"/>
-                <NavigationViewItem x:Name="Artists" Content="Artists" Tag="3" Icon="Contact2"/>
-            </NavigationView.MenuItems>
-        </NavigationView>
         <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,80,0,100" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">
             <GridView.ItemsPanel>
                 <ItemsPanelTemplate>
