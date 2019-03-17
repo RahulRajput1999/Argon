@@ -124,6 +124,7 @@
     </Compile>
     <Compile Include="Model\AudioFile.cs" />
     <Compile Include="Model\MediaFile.cs" />
+    <Compile Include="Model\Playlist.cs" />
     <Compile Include="Model\VideoFile.cs" />
     <Compile Include="Music.xaml.cs">
       <DependentUpon>Music.xaml</DependentUpon>
@@ -224,6 +225,11 @@
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.3</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <SDKReference Include="WindowsDesktop, Version=10.0.17763.0">
+      <Name>Windows Desktop Extensions for the UWP</Name>
+    </SDKReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
