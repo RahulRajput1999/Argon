@@ -14,6 +14,8 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.Media.Playlists;
 using Windows.Storage;
+using Windows.Storage.Search;
+using System.Diagnostics;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -55,9 +57,27 @@ namespace Argon
 
         }
 
-        private void LoadPlaylists()
+        private async void LoadPlaylists()
         {
-            
+            PlaylistList.Items.Clear();
+            StorageFolder sf = KnownFolders.MusicLibrary;
+            IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
+            List<Playlist> playlists = new List<Playlist>();
+            foreach(StorageFile sfl in fileList)
+            {
+                Debug.WriteLine(sfl.FileType);
+                if(sfl.FileType == ".wpl")
+                {
+                    Playlist plst = new Playlist();
+                    Model.Playlist playlist = new Model.Playlist();
+                    playlist.Name = sfl.Name;
+                    playlist.Path = sfl.Path;
+                    plst = await Playlist.LoadAsync(sfl);
+                    playlists.Add(plst);
+                    PlaylistList.Items.Add(playlist);
+                }
+            }
+            Debug.WriteLine("Well its done");
         }
         private void NewPlaylist_Click(object sender, RoutedEventArgs e)
         {
@@ -68,6 +88,21 @@ namespace Argon
         }
 
         private void SongList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+
+        }
+
+        private void PlayButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Edit_Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void AppendButton_Click(object sender, RoutedEventArgs e)
         {
 
         }

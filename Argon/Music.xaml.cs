@@ -17,6 +17,8 @@ using Windows.Storage.FileProperties;
 using Windows.UI.Xaml.Media.Imaging;
 using Argon.Model;
 using Windows.Media.Core;
+using Windows.Media.Playlists;
+using System.Diagnostics;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -29,12 +31,33 @@ namespace Argon
     {
         ApplicationDataContainer local;
         List<string> musicFormat = new List<string>() { ".mp3", ".wav"};
+        List<Model.Playlist> PlaylistsList = new List<Model.Playlist>();
+        Model.Playlist clickedPlaylist;
         public Music()
         {
             this.InitializeComponent();
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
             local = ApplicationData.Current.LocalSettings;
             LoadAudios();
+            LoadPlaylists();
+        }
+
+        private async void LoadPlaylists()
+        {
+            StorageFolder sf = KnownFolders.MusicLibrary;
+            IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
+            List<Windows.Media.Playlists.Playlist> playlists = new List<Windows.Media.Playlists.Playlist>();
+            foreach (StorageFile sfl in fileList)
+            {
+                if (sfl.FileType == ".wpl")
+                {
+                    Model.Playlist playlist = new Model.Playlist();
+                    playlist.Name = sfl.Name;
+                    playlist.Path = sfl.Path;
+                    PlaylistsList.Add(playlist);
+                }
+            }
+           
         }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -170,6 +193,74 @@ namespace Argon
         private void MusicNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
 
+        }
+
+        private async void NewPlaylist_click(object sender, RoutedEventArgs e)
+        {
+            var buttonTag = ((Button)sender).Tag.ToString();
+            Debug.WriteLine(buttonTag);
+            ContentDialogResult result = await NewPlayListDialog.ShowAsync();
+            if(result == ContentDialogResult.Primary)
+            {
+                Windows.Media.Playlists.Playlist playlist = new Windows.Media.Playlists.Playlist();
+                StorageFolder sf = KnownFolders.MusicLibrary;
+                string name = PlaylistName.Text;
+                NameCollisionOption collisionOption = NameCollisionOption.ReplaceExisting;
+                PlaylistFormat format = PlaylistFormat.WindowsMedia;
+                StorageFile storageFile = await sf.GetFileAsync(buttonTag);
+                playlist.Files.Add(storageFile);
+                try
+                {
+                    StorageFile savedFile = await playlist.SaveAsAsync(sf, name, collisionOption, format);
+                }
+                catch (Exception error)
+                {
+                    Console.WriteLine(error.StackTrace);
+                }
+            }
+        }
+
+        private async void ExistingPlaylist_Click(object sender, RoutedEventArgs e)
+        {
+            var buttonTag = ((Button)sender).Tag.ToString();
+            Debug.WriteLine("Inside dialog:");
+            PlaylistList.Items.Clear();
+            foreach (var v in PlaylistsList)
+            {
+                PlaylistList.Items.Add(v);
+                Debug.WriteLine(v.Name);
+            }
+            Debug.WriteLine("Ends for loop:");
+            ContentDialogResult result = await ExistingPlayListDialog.ShowAsync();
+            
+            if (result == ContentDialogResult.Primary)
+            {
+                Windows.Media.Playlists.Playlist playlist = new Windows.Media.Playlists.Playlist();
+                StorageFolder sf = KnownFolders.MusicLibrary;
+                IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
+                var playlistFile = fileList.Where(f => f.Name == clickedPlaylist.Name).FirstOrDefault();
+                playlist = await Windows.Media.Playlists.Playlist.LoadAsync(playlistFile);
+                NameCollisionOption collisionOption = NameCollisionOption.ReplaceExisting;
+                PlaylistFormat format = PlaylistFormat.WindowsMedia;
+                StorageFile storageFile = await sf.GetFileAsync(buttonTag);
+                playlist.Files.Add(storageFile);
+                try
+                {
+                    StorageFile savedFile = await playlist.SaveAsAsync(sf, playlistFile.Name.Replace(".wpl",""), collisionOption, format);
+                    Debug.WriteLine("Edited successfully");
+                }
+                catch (Exception error)
+                {
+                    Console.WriteLine(error.StackTrace);
+                    Debug.WriteLine("Something went wrong:" + error.StackTrace);
+                }
+
+            }
+        }
+
+        private void PlaylistList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            clickedPlaylist = (Model.Playlist)e.ClickedItem;
         }
     }
 }
