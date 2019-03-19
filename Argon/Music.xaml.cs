@@ -19,6 +19,7 @@ using Argon.Model;
 using Windows.Media.Core;
 using Windows.Media.Playlists;
 using System.Diagnostics;
+using Windows.Media.Playback;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -33,6 +34,8 @@ namespace Argon
         List<string> musicFormat = new List<string>() { ".mp3", ".wav"};
         List<Model.Playlist> PlaylistsList = new List<Model.Playlist>();
         Model.Playlist clickedPlaylist;
+        IReadOnlyList<StorageFile> fileList;
+        List<StorageFile> songFileList = new List<StorageFile>();
         public Music()
         {
             this.InitializeComponent();
@@ -40,6 +43,29 @@ namespace Argon
             local = ApplicationData.Current.LocalSettings;
             LoadAudios();
             LoadPlaylists();
+            LoadPlaylistsView();
+        }
+
+        private async void LoadPlaylistsView()
+        {
+            PlaylistList.Items.Clear();
+            StorageFolder sf = KnownFolders.MusicLibrary;
+            fileList = await sf.GetFilesAsync();
+            List<Windows.Media.Playlists.Playlist> playlists = new List<Windows.Media.Playlists.Playlist>();
+            foreach (StorageFile sfl in fileList)
+            {
+                Debug.WriteLine(sfl.FileType);
+                if (sfl.FileType == ".wpl")
+                {
+                    Model.Playlist playlist = new Model.Playlist();
+                    playlist.Name = sfl.Name;
+                    playlist.Path = sfl.Path;
+                    Windows.Media.Playlists.Playlist plst = await Windows.Media.Playlists.Playlist.LoadAsync(sfl);
+                    playlists.Add(plst);
+                    PlaylistList1.Items.Add(playlist);
+                }
+            }
+            Debug.WriteLine("Well its done");
         }
 
         private async void LoadPlaylists()
@@ -90,6 +116,12 @@ namespace Argon
             }
             LoadAudios();
         }
+
+        public async void LoadAlbums()
+        {
+
+        }
+
         public async void LoadAudios()
         {
             local.Values["lastState"] = "audio";
@@ -101,7 +133,7 @@ namespace Argon
             foreach (StorageFile f in fileList)
             {
                 if (musicFormat.FindIndex(x => x.Equals(f.FileType, StringComparison.OrdinalIgnoreCase)) != -1)
-                {
+                { 
                     const uint size = 100;
                     using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
                     {
@@ -124,6 +156,7 @@ namespace Argon
                             o1.Name = f.Name;
                             o1.Path = "MusicLibrary";
                             SongList.Items.Add(o1);
+                            songFileList.Add(f);
                         }
                     }
                 }
@@ -258,9 +291,97 @@ namespace Argon
             }
         }
 
-        private void PlaylistList_ItemClick(object sender, ItemClickEventArgs e)
+        private async void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            clickedPlaylist = (Model.Playlist)e.ClickedItem;
+            var buttonTag = ((Button)sender).Tag.ToString();
+            if (fileList != null)
+            {
+                var fileToPlay = fileList.Where(f => f.Name == buttonTag).FirstOrDefault();
+                if (fileToPlay != null)
+                {
+                    Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToPlay);
+                    MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                    foreach (var f in playlist.Files)
+                    {
+                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                    }
+                    if (mediaPlaybackList.Items.Count != 0)
+                    {
+                        mediaElement.Source = mediaPlaybackList;
+                        mediaElement.MediaPlayer.Play();
+                    }
+                }
+            }
+        }
+
+        private async void PlaylistList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            PlaylistSongs.Items.Clear();
+            const ThumbnailMode thumbnailMode = ThumbnailMode.MusicView;
+            Model.Playlist playlistToShow = (Model.Playlist)e.ClickedItem;
+            var fileToShow = fileList.Where(f => f.Name == playlistToShow.Name).FirstOrDefault();
+            Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToShow);
+            foreach (var s in playlist.Files)
+            {
+                const uint size = 100;
+                using (StorageItemThumbnail thumbnail = await s.GetThumbnailAsync(thumbnailMode, size))
+                {
+                    // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
+                    // (which may be returned as a fallback if the file does not provide album art) 
+                    if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
+                    {
+                        BitmapImage bitmapImage = new BitmapImage();
+                        bitmapImage.SetSource(thumbnail);
+                        Model.MediaFile o1 = new Model.AudioFile();
+                        Image i = new Image();
+                        MusicProperties musicProperties = await s.Properties.GetMusicPropertiesAsync();
+                        i.Source = bitmapImage;
+                        o1.Thumb = i;
+                        o1.Title = s.Name;
+                        if (musicProperties.Title != "")
+                        {
+                            o1.Title = musicProperties.Title;
+                        }
+                        o1.Name = s.Name;
+                        o1.Path = "MusicLibrary";
+                        PlaylistSongs.Items.Add(o1);
+                    }
+                }
+            }
+            PlaylistView.Title = fileToShow.Name.Replace(".wpl", "");
+            ContentDialogResult contentDialogResult = await PlaylistView.ShowAsync();
+            if (contentDialogResult == ContentDialogResult.Primary)
+            {
+                playlist.Files.Clear();
+                StorageFolder sf = KnownFolders.MusicLibrary;
+                NameCollisionOption collisionOption = NameCollisionOption.ReplaceExisting;
+                PlaylistFormat format = PlaylistFormat.WindowsMedia;
+                foreach (Model.MediaFile item in PlaylistSongs.Items)
+                {
+                    StorageFile storageFile = await sf.GetFileAsync(item.Name);
+                    playlist.Files.Add(storageFile);
+                    Debug.WriteLine(item.Name);
+                }
+                StorageFile savedFile = await playlist.SaveAsAsync(sf, fileToShow.Name.Replace(".wpl", ""), collisionOption, format);
+            }
+            else if (contentDialogResult == ContentDialogResult.Secondary)
+            {
+
+                if (fileToShow != null)
+                {
+                    Windows.Media.Playlists.Playlist playlistToPlay = await Windows.Media.Playlists.Playlist.LoadAsync(fileToShow);
+                    MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                    foreach (var f in playlist.Files)
+                    {
+                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                    }
+                    if (mediaPlaybackList.Items.Count != 0)
+                    {
+                        mediaElement.Source = mediaPlaybackList;
+                        mediaElement.MediaPlayer.Play();
+                    }
+                }
+            }
         }
     }
 }
