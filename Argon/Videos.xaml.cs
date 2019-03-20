@@ -26,7 +26,6 @@ namespace Argon
     /// </summary>
     public sealed partial class Videos : Page
     {
-        int x = 5;
         ApplicationDataContainer local;
         List<string> videoFormat = new List<string>() { ".mov", ".mp4", ".mkv" };
         public Videos()

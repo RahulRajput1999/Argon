@@ -20,6 +20,8 @@ using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage.FileProperties;
 using Windows.UI.Xaml.Media.Imaging;
+using Windows.Storage.Pickers;
+using System.Threading.Tasks;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -30,6 +32,7 @@ namespace Argon
     /// </summary>
     public sealed partial class Playlists : Page
     {
+        public static readonly string[] validExtensions = new string[] { ".mp3", ".wav" };
         IReadOnlyList<StorageFile> fileList;
         public Playlists()
         {
@@ -190,6 +193,89 @@ namespace Argon
                     if (mediaPlaybackList.Items.Count != 0)
                     {
                         mediaElement.Source = mediaPlaybackList;
+                        mediaElement.MediaPlayer.Play();
+                    }
+                }
+            }
+        }
+
+        private async void Append_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var buttonTag = ((Button)sender).Tag.ToString();
+            if (fileList != null)
+            {
+                var fileToPlay = fileList.Where(f => f.Name == buttonTag).FirstOrDefault();
+                if (fileToPlay != null)
+                {
+                    Playlist playlist = await Playlist.LoadAsync(fileToPlay);
+                    FileOpenPicker picker = CreateFilePicker(validExtensions);
+                    IReadOnlyList<StorageFile> files = await picker.PickMultipleFilesAsync();
+
+                    if (files.Count > 0)
+                    {
+                        foreach (StorageFile file in files)
+                        {
+                            playlist.Files.Add(file);
+                        }
+
+                        if (await TrySavePlaylistAsync(playlist))
+                        {
+                            //rootPage.NotifyUser(files.Count + " files added to playlist.", NotifyType.StatusMessage);
+                        }
+                    }
+                }
+            }
+        }
+        public static FileOpenPicker CreateFilePicker(string[] extensions)
+        {
+            FileOpenPicker picker = new FileOpenPicker();
+            picker.SuggestedStartLocation = PickerLocationId.MusicLibrary;
+
+            foreach (string extension in extensions)
+            {
+                picker.FileTypeFilter.Add(extension);
+            }
+
+            return picker;
+        }
+        async public Task<bool> TrySavePlaylistAsync(Playlist playlist)
+        {
+            try
+            {
+                await playlist.SaveAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        private async void Shuffle_Button_Click(object sender, RoutedEventArgs e)
+        {
+            var buttonTag = ((Button)sender).Tag.ToString();
+            if (fileList != null)
+            {
+                var fileToPlay = fileList.Where(f => f.Name == buttonTag).FirstOrDefault();
+                if (fileToPlay != null)
+                {
+                    Playlist playlist = await Playlist.LoadAsync(fileToPlay);
+                    MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                    foreach (var item in playlist.Files)
+                    {
+                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(item)));
+                    }
+                    mediaPlaybackList.ShuffleEnabled = true;
+                    IReadOnlyList<MediaPlaybackItem> items = mediaPlaybackList.ShuffledItems;
+                    MediaPlaybackList newplaybacklist = new MediaPlaybackList();
+                    foreach (var item in items)
+                    {
+                        newplaybacklist.Items.Add(item);
+                    }
+                    if (newplaybacklist.Items.Count != 0)
+                    {
+                        mediaElement.Source = newplaybacklist;
                         mediaElement.MediaPlayer.Play();
                     }
                 }
