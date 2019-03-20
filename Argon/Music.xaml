@@ -36,6 +36,7 @@
                 <TextBlock MaxLines="1" Width="300" TextAlignment="Left" TextWrapping="Wrap" Text="{x:Bind Name}" Margin="10,10,10,10"/>
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
                 <AppBarButton Tag="{x:Bind Name}" Icon="Play" ToolTipService.ToolTip="Play" Height="40" Click="PlayButton_Click"/>
+                <AppBarButton Tag="{x:Bind Name}" Icon="Shuffle" ToolTipService.ToolTip="Shuffle" Height="40" Click="ShuffleButton_Click"/>
             </StackPanel>
         </DataTemplate>
     </Page.Resources>
@@ -76,7 +77,11 @@
         </Pivot>
         <MediaPlayerElement Height="100" x:Name="mediaElement" HorizontalAlignment="Center" VerticalAlignment="Bottom" AreTransportControlsEnabled="True" Margin="15,0,15,0">
             <MediaPlayerElement.TransportControls>
-                <MediaTransportControls IsCompact="False"
+                <MediaTransportControls     IsCompact="False"
+                                            IsNextTrackButtonVisible="True"
+                                            IsPreviousTrackButtonVisible="True"
+                                            IsRepeatEnabled="True"
+                                            IsRepeatButtonVisible="True"
                                             IsFastForwardButtonVisible="True"
                                             IsFastForwardEnabled="True"
                                             IsFastRewindButtonVisible="True"

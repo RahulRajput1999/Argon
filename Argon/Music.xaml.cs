@@ -534,5 +534,35 @@ namespace Argon
             clickedPlaylist = (Model.Playlist)e.ClickedItem;
             ExistingPlayListDialog.IsPrimaryButtonEnabled = true;
         }
+
+        private async void ShuffleButton_Click(object sender, RoutedEventArgs e)
+        {
+            var buttonTag = ((Button)sender).Tag.ToString();
+            if (fileList != null)
+            {
+                var fileToPlay = fileList.Where(f => f.Name == buttonTag).FirstOrDefault();
+                if (fileToPlay != null)
+                {
+                    Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToPlay);
+                    MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                    foreach (var item in playlist.Files)
+                    {
+                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(item)));
+                    }
+                    mediaPlaybackList.ShuffleEnabled = true;
+                    IReadOnlyList<MediaPlaybackItem> items = mediaPlaybackList.ShuffledItems;
+                    MediaPlaybackList newplaybacklist = new MediaPlaybackList();
+                    foreach (var item in items)
+                    {
+                        newplaybacklist.Items.Add(item);
+                    }
+                    if (newplaybacklist.Items.Count != 0)
+                    {
+                        mediaElement.Source = newplaybacklist;
+                        mediaElement.MediaPlayer.Play();
+                    }
+                }
+            }
+        }
     }
 }
