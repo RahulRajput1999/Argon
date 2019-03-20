@@ -16,6 +16,8 @@
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
                 <AppBarButton Tag="{x:Bind Name}" Icon="Play" ToolTipService.ToolTip="Play" Height="40" Click="PlayButton_Click"/>
                 <AppBarButton Icon="Edit" ToolTipService.ToolTip="Edit" Height="40" Click="Edit_Button_Click"/>
+                <AppBarButton Tag="{x:Bind Name}" Icon="Attach" ToolTipService.ToolTip="Append File" Height="40" Click="Append_Button_Click"/>
+                <AppBarButton Tag="{x:Bind Name}" Icon="Shuffle" ToolTipService.ToolTip="Shuffle(Ctrl+S)" Height="40" Click="Shuffle_Button_Click"/>
             </StackPanel>
         </DataTemplate>
     </Page.Resources>
@@ -72,6 +74,8 @@
         <MediaPlayerElement Height="100" x:Name="mediaElement" HorizontalAlignment="Center" VerticalAlignment="Bottom" AreTransportControlsEnabled="True" Margin="15,0,15,0">
             <MediaPlayerElement.TransportControls>
                 <MediaTransportControls IsCompact="False"
+                                            IsNextTrackButtonVisible="True"
+                                            IsPreviousTrackButtonVisible="True"
                                             IsFastForwardButtonVisible="True"
                                             IsFastForwardEnabled="True"
                                             IsFastRewindButtonVisible="True"
