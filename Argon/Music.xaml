@@ -15,6 +15,7 @@
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Name}"/>
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Album}"/>
+                <TextBlock Visibility="Collapsed" Text="{x:Bind Artist}"/>
                 <Button ToolTipService.ToolTip="Add to" Height="40">
                     <Image Source="/Assets/twotone_add_white_18dp.png" AutomationProperties.Name="Add"/>
                     <Button.Flyout>
@@ -40,15 +41,16 @@
     </Page.Resources>
     <Grid Name="grid">
         <CommandBar DefaultLabelPosition="Right">
-            <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"></AppBarButton>
+            <AppBarButton Icon="List" x:Name="QueueButton" Label="Queue" Click="QueueButton_Click"></AppBarButton>
+            <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" IsEnabled="True" Click="AddLibraryButton_Click"></AppBarButton>
             <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Music" Click="BrowseButton_Click"></AppBarButton>
             <CommandBar.SecondaryCommands>
                 <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
             </CommandBar.SecondaryCommands>
         </CommandBar>
-        <Pivot Title="Music">
+        <Pivot Margin="0,40,0,204">
             <PivotItem Header="Songs">
-                <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,10,0,100" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">
+                <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,10,0,10" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">
                     <GridView.ItemsPanel>
                         <ItemsPanelTemplate>
                             <ItemsWrapGrid HorizontalAlignment="Left" MaximumRowsOrColumns="1" Orientation="Horizontal" />
@@ -57,10 +59,10 @@
                 </GridView>
             </PivotItem>
             <PivotItem Header="Albums">
-                <TextBlock Text="unread emails go here." />
+                <ListView x:Name="AlbumListView" ItemClick="AlbumListView_ItemClick" IsItemClickEnabled="True"/>
             </PivotItem>
             <PivotItem Header="Artists">
-                <TextBlock Text="flagged emails go here." />
+                <ListView x:Name="ArtistListView" ItemClick="ArtistListView_ItemClick" IsItemClickEnabled="True"/>
             </PivotItem>
             <PivotItem Header="Playlists">
                 <GridView ItemTemplate="{StaticResource PlaylistTemplate}" x:Name="PlaylistList1" HorizontalAlignment="Left" Margin="15,10,0,100" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="PlaylistList_ItemClick">
@@ -90,7 +92,7 @@
             x:Name="NewPlayListDialog"
             PrimaryButtonText="Create"
             CloseButtonText="Cancel"
-            DefaultButton="Primary">
+            DefaultButton="Primary" d:IsHidden="True">
             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <TextBlock 
                     Text="Name of Playlist" 
@@ -106,12 +108,12 @@
             x:Name="ExistingPlayListDialog"
             PrimaryButtonText="Add"
             CloseButtonText="Cancel"
-            DefaultButton="Primary">
+            DefaultButton="Primary" d:IsHidden="True">
             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <TextBlock 
                     Text="Name of Playlists" 
                     TextWrapping="Wrap" />
-                <GridView x:Name="PlaylistList" HorizontalAlignment="Left" IsItemClickEnabled="True" ItemClick="PlaylistList_ItemClick">
+                <GridView x:Name="PlaylistList" HorizontalAlignment="Left" IsItemClickEnabled="True" ItemClick="PlaylistList_ItemClick_1">
                     <GridView.ItemTemplate>
                         <DataTemplate x:DataType="model:Playlist">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="1500">
@@ -132,14 +134,13 @@
         <ContentDialog
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        PrimaryButtonText="Save"
-        x:Name="PlaylistView"
+        x:Name="SonglistView"
         SecondaryButtonText="Play"
         CloseButtonText="Close"
-        DefaultButton="Primary">
+        DefaultButton="Primary" d:IsHidden="True">
 
             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                <ListView x:Name="PlaylistSongs" CanDragItems="True" CanReorderItems="True" AllowDrop="True" SelectionMode="Single">
+                <ListView x:Name="PlaylistSongs" SelectionMode="Single">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="model:MediaFile">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="1500">

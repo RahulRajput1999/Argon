@@ -35,12 +35,15 @@ namespace Argon
         List<Model.Playlist> PlaylistsList = new List<Model.Playlist>();
         Model.Playlist clickedPlaylist;
         IReadOnlyList<StorageFile> fileList;
-        List<StorageFile> songFileList = new List<StorageFile>();
+        List<AudioFile> songFileList = new List<AudioFile>();
+        List<AudioFile> queue = new List<AudioFile>();
+        int currentPlaying;
         public Music()
         {
             this.InitializeComponent();
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
             local = ApplicationData.Current.LocalSettings;
+            
             LoadAudios();
             LoadPlaylists();
             LoadPlaylistsView();
@@ -48,13 +51,12 @@ namespace Argon
 
         private async void LoadPlaylistsView()
         {
-            PlaylistList.Items.Clear();
+            PlaylistList1.Items.Clear();
             StorageFolder sf = KnownFolders.MusicLibrary;
             fileList = await sf.GetFilesAsync();
             List<Windows.Media.Playlists.Playlist> playlists = new List<Windows.Media.Playlists.Playlist>();
             foreach (StorageFile sfl in fileList)
             {
-                Debug.WriteLine(sfl.FileType);
                 if (sfl.FileType == ".wpl")
                 {
                     Model.Playlist playlist = new Model.Playlist();
@@ -65,7 +67,6 @@ namespace Argon
                     PlaylistList1.Items.Add(playlist);
                 }
             }
-            Debug.WriteLine("Well its done");
         }
 
         private async void LoadPlaylists()
@@ -117,8 +118,39 @@ namespace Argon
             LoadAudios();
         }
 
-        public async void LoadAlbums()
+        public void LoadAlbums()
         {
+            AlbumListView.Items.Clear();
+            if (songFileList != null)
+            {
+                var albumList = songFileList.GroupBy(x => x.Album).Select(g => g.First());
+                foreach (var x in albumList)
+                {
+                    AlbumListView.Items.Add(x.Album);
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Got null as filelist");
+            }
+            
+        }
+
+        public void LoadArtists()
+        {
+            ArtistListView.Items.Clear();
+            if (songFileList != null)
+            {
+                var artistList = songFileList.GroupBy(x => x.Artist).Select(g => g.First());
+                foreach (var x in artistList)
+                {
+                    ArtistListView.Items.Add(x.Artist);
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Got null as filelist");
+            }
 
         }
 
@@ -143,7 +175,7 @@ namespace Argon
                         {
                             BitmapImage bitmapImage = new BitmapImage();
                             bitmapImage.SetSource(thumbnail);
-                            MediaFile o1 = new AudioFile();
+                            AudioFile o1 = new AudioFile();
                             Image i = new Image();
                             MusicProperties musicProperties = await f.Properties.GetMusicPropertiesAsync();
                             i.Source = bitmapImage;
@@ -152,11 +184,13 @@ namespace Argon
                             if (musicProperties.Title != "")
                             {
                                 o1.Title = musicProperties.Title;
+                                o1.Album = musicProperties.Album;
+                                o1.Artist = musicProperties.Artist;
                             }
                             o1.Name = f.Name;
                             o1.Path = "MusicLibrary";
                             SongList.Items.Add(o1);
-                            songFileList.Add(f);
+                            songFileList.Add(o1);
                         }
                     }
                 }
@@ -200,6 +234,9 @@ namespace Argon
                     }
                 }
             }
+            LoadAlbums();
+            LoadArtists();
+
         }
 
         private async void SongList_ItemClick(object sender, ItemClickEventArgs e)
@@ -219,6 +256,12 @@ namespace Argon
             }
             Console.WriteLine(storageFile.Path);
             mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+            queue.Clear();
+            foreach(var af in songFileList)
+            {
+                queue.Add(af);
+            }
+            currentPlaying = queue.IndexOf((AudioFile)e.ClickedItem);
             mediaElement.AutoPlay = true;
             mediaElement.MediaPlayer.Play();
         }
@@ -245,6 +288,7 @@ namespace Argon
                 try
                 {
                     StorageFile savedFile = await playlist.SaveAsAsync(sf, name, collisionOption, format);
+                    LoadPlaylistsView();
                 }
                 catch (Exception error)
                 {
@@ -264,6 +308,7 @@ namespace Argon
                 Debug.WriteLine(v.Name);
             }
             Debug.WriteLine("Ends for loop:");
+            ExistingPlayListDialog.IsPrimaryButtonEnabled = false;
             ContentDialogResult result = await ExistingPlayListDialog.ShowAsync();
             
             if (result == ContentDialogResult.Primary)
@@ -293,6 +338,7 @@ namespace Argon
 
         private async void PlayButton_Click(object sender, RoutedEventArgs e)
         {
+            queue.Clear();
             var buttonTag = ((Button)sender).Tag.ToString();
             if (fileList != null)
             {
@@ -303,6 +349,8 @@ namespace Argon
                     MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
                     foreach (var f in playlist.Files)
                     {
+                        var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
+                        queue.Add(af);
                         mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
                     }
                     if (mediaPlaybackList.Items.Count != 0)
@@ -348,8 +396,13 @@ namespace Argon
                     }
                 }
             }
-            PlaylistView.Title = fileToShow.Name.Replace(".wpl", "");
-            ContentDialogResult contentDialogResult = await PlaylistView.ShowAsync();
+            SonglistView.Title = fileToShow.Name.Replace(".wpl", "");
+            SonglistView.IsPrimaryButtonEnabled = true;
+            SonglistView.PrimaryButtonText = "Save";
+            PlaylistSongs.CanDragItems = true;
+            PlaylistSongs.CanReorderItems = true;
+            PlaylistSongs.AllowDrop = true;
+            ContentDialogResult contentDialogResult = await SonglistView.ShowAsync();
             if (contentDialogResult == ContentDialogResult.Primary)
             {
                 playlist.Files.Clear();
@@ -382,6 +435,104 @@ namespace Argon
                     }
                 }
             }
+        }
+
+        private async void AlbumListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            PlaylistSongs.Items.Clear();
+            string albumName= (string)e.ClickedItem;
+            SonglistView.Title = albumName;
+            SonglistView.IsPrimaryButtonEnabled = false;
+            var listToShow = songFileList.Where(x => x.Album == albumName);
+            List<StorageFile> filesToPlay = new List<StorageFile>();
+            StorageFolder musicFolder = KnownFolders.MusicLibrary;
+            foreach(AudioFile af in listToShow)
+            {
+                PlaylistSongs.Items.Add(af);
+                StorageFile sf = await musicFolder.GetFileAsync(af.Name);
+                filesToPlay.Add(sf);
+            }
+            PlaylistSongs.CanDragItems = false;
+            PlaylistSongs.CanReorderItems = false;
+            PlaylistSongs.AllowDrop = false;
+            ContentDialogResult result = await SonglistView.ShowAsync();
+            if(result == ContentDialogResult.Secondary)
+            {
+                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                foreach (var f in filesToPlay)
+                {
+                    mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                }
+                if (mediaPlaybackList.Items.Count != 0)
+                {
+                    mediaElement.Source = mediaPlaybackList;
+                    mediaElement.MediaPlayer.Play();
+                }
+            }
+        }
+
+        private async void ArtistListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            PlaylistSongs.Items.Clear();
+            string artistName = (string)e.ClickedItem;
+            SonglistView.Title = artistName;
+            SonglistView.IsPrimaryButtonEnabled = false;
+            var listToShow = songFileList.Where(x => x.Artist == artistName);
+            List<StorageFile> filesToPlay = new List<StorageFile>();
+            StorageFolder musicFolder = KnownFolders.MusicLibrary;
+            foreach (AudioFile af in listToShow)
+            {
+                PlaylistSongs.Items.Add(af);
+                StorageFile sf = await musicFolder.GetFileAsync(af.Name);
+                filesToPlay.Add(sf);
+            }
+            PlaylistSongs.CanDragItems = false;
+            PlaylistSongs.CanReorderItems = false;
+            PlaylistSongs.AllowDrop = false;
+            ContentDialogResult result = await SonglistView.ShowAsync();
+            if (result == ContentDialogResult.Secondary)
+            {
+                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                foreach (var f in filesToPlay)
+                {
+                    mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                }
+                if (mediaPlaybackList.Items.Count != 0)
+                {
+                    mediaElement.Source = mediaPlaybackList;
+                    mediaElement.MediaPlayer.Play();
+                }
+            }
+        }
+
+        private async void QueueButton_Click(object sender, RoutedEventArgs e)
+        {
+            PlaylistSongs.Items.Clear();
+            foreach(AudioFile af in queue)
+            {
+                PlaylistSongs.Items.Add(af);
+            }
+            PlaylistSongs.SelectedIndex = currentPlaying;
+            PlaylistSongs.CanDragItems = true;
+            PlaylistSongs.CanReorderItems = true;
+            PlaylistSongs.AllowDrop = true;
+            SonglistView.IsPrimaryButtonEnabled = true;
+            SonglistView.PrimaryButtonText = "Save";
+            ContentDialogResult result = await SonglistView.ShowAsync();
+            if(result == ContentDialogResult.Primary)
+            {
+                queue.Clear();
+                foreach(AudioFile af in PlaylistSongs.Items)
+                {
+                    queue.Add(af);
+                }
+            }
+        }
+
+        private void PlaylistList_ItemClick_1(object sender, ItemClickEventArgs e)
+        {
+            clickedPlaylist = (Model.Playlist)e.ClickedItem;
+            ExistingPlayListDialog.IsPrimaryButtonEnabled = true;
         }
     }
 }
