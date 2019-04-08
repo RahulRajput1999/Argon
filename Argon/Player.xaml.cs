@@ -45,20 +45,7 @@ namespace Argon
             if (e.Parameter.GetType() == typeof(MediaFile) || e.Parameter.GetType() == typeof(VideoFile) || e.Parameter.GetType() == typeof(AudioFile))
             {
                 file = (MediaFile)e.Parameter;
-                if (file.Path == "MusicLibrary")
-                {
-                    storageFolder = KnownFolders.MusicLibrary;
-                    storageFile = await storageFolder.GetFileAsync(file.Name);
-                }
-                else if (file.Path == "VideoLibrary")
-                {
-                    storageFolder = KnownFolders.VideosLibrary;
-                    storageFile = await storageFolder.GetFileAsync(file.Name);
-                }
-                else
-                {
-                    storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
-                }
+                storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
                 Console.WriteLine(storageFile.Path);
 
 
