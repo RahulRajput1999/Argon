@@ -16,6 +16,7 @@ using Windows.UI.Xaml.Navigation;
 using Windows.Storage.FileProperties;
 using Windows.UI.Xaml.Media.Imaging;
 using Argon.Model;
+using System.Threading.Tasks;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -86,12 +87,10 @@ namespace Argon
                 superParent.Navigate(typeof(Player), file);
             }
         }
-        public async void LoadVideos()
+
+        public async Task LoadFromFolder(StorageFolder storageFolder)
         {
-            local.Values["lastState"] = "video";
-            FileHolder.Items.Clear();
-            StorageFolder sf = KnownFolders.VideosLibrary;
-            IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
+            IReadOnlyList<StorageFile> fileList = await storageFolder.GetFilesAsync();
             const ThumbnailMode thumbnailMode = ThumbnailMode.MusicView;
             foreach (StorageFile f in fileList)
             {
@@ -102,7 +101,7 @@ namespace Argon
                     {
                         // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
                         // (which may be returned as a fallback if the file does not provide album art) 
-                        if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
+                        if (thumbnail != null && (thumbnail.Type == ThumbnailType.Image || thumbnail.Type == ThumbnailType.Icon))
                         {
                             BitmapImage bitmapImage = new BitmapImage();
                             bitmapImage.SetSource(thumbnail);
@@ -113,16 +112,27 @@ namespace Argon
                             o1.Thumb = i;
                             o1.Title = f.Name;
                             if (videoProperties.Title != "")
-                            {
                                 o1.Title = videoProperties.Title;
-                            }
                             o1.Name = f.Name;
-                            o1.Path = "VideoLibrary";
+                            o1.Path = f.Path;
                             FileHolder.Items.Add(o1);
                         }
                     }
                 }
             }
+            IReadOnlyList<StorageFolder> folderList = await storageFolder.GetFoldersAsync();
+            foreach(var i in folderList)
+            {
+                await LoadFromFolder(i);
+            }
+        }
+
+        public async void LoadVideos()
+        {
+            local.Values["lastState"] = "video";
+            FileHolder.Items.Clear();
+            StorageFolder sf = KnownFolders.VideosLibrary;
+            await LoadFromFolder(sf);
 
             int count = int.Parse(local.Values["CountVideo"].ToString());
             for (int i = 1; i <= count; i++)
@@ -130,37 +140,7 @@ namespace Argon
                 string foldnm = "video" + i.ToString();
                 string token = local.Values[foldnm].ToString();
                 sf = await Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.GetFolderAsync(token);
-                fileList = await sf.GetFilesAsync();
-                foreach (StorageFile f in fileList)
-                {
-                    if (videoFormat.FindIndex(x => x.Equals(f.FileType, StringComparison.OrdinalIgnoreCase)) != -1)
-                    {
-                        const uint size = 100;
-                        using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
-                        {
-                            // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
-                            // (which may be returned as a fallback if the file does not provide album art) 
-                            if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
-                            {
-                                BitmapImage bitmapImage = new BitmapImage();
-                                bitmapImage.SetSource(thumbnail);
-                                MediaFile o1 = new VideoFile();
-                                VideoProperties videoProperties = await f.Properties.GetVideoPropertiesAsync();
-                                Image i1 = new Image();
-                                i1.Source = bitmapImage;
-                                o1.Thumb = i1;
-                                o1.Title = f.Name;
-                                if (videoProperties.Title != "")
-                                {
-                                    o1.Title = videoProperties.Title;
-                                }
-                                o1.Name = f.Name;
-                                o1.Path = f.Path;
-                                FileHolder.Items.Add(o1);
-                            }
-                        }
-                    }
-                }
+                await LoadFromFolder(sf);
             }
         }
     }

@@ -20,6 +20,7 @@ using Windows.Media.Core;
 using Windows.Media.Playlists;
 using System.Diagnostics;
 using Windows.Media.Playback;
+using System.Threading.Tasks;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -84,7 +85,6 @@ namespace Argon
                     PlaylistsList.Add(playlist);
                 }
             }
-           
         }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -154,24 +154,18 @@ namespace Argon
 
         }
 
-        public async void LoadAudios()
+        public async Task LoadFromFolder(StorageFolder storageFolder)
         {
-            local.Values["lastState"] = "audio";
-            SongList.Items.Clear();
-            StorageFolder sf = KnownFolders.MusicLibrary;
-            //StorageFolder sf = await DownloadsFolder.
-            IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
+            IReadOnlyList<StorageFile> fileList = await storageFolder.GetFilesAsync();
             const ThumbnailMode thumbnailMode = ThumbnailMode.MusicView;
             foreach (StorageFile f in fileList)
             {
                 if (musicFormat.FindIndex(x => x.Equals(f.FileType, StringComparison.OrdinalIgnoreCase)) != -1)
-                { 
+                {
                     const uint size = 100;
                     using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
                     {
-                        // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
-                        // (which may be returned as a fallback if the file does not provide album art) 
-                        if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
+                        if (thumbnail != null && (thumbnail.Type == ThumbnailType.Image || thumbnail.Type == ThumbnailType.Icon))
                         {
                             BitmapImage bitmapImage = new BitmapImage();
                             bitmapImage.SetSource(thumbnail);
@@ -181,14 +175,16 @@ namespace Argon
                             i.Source = bitmapImage;
                             o1.Thumb = i;
                             o1.Title = f.Name;
+                            o1.Album = "Unknown";
+                            o1.Artist = "Unknown";
                             if (musicProperties.Title != "")
-                            {
                                 o1.Title = musicProperties.Title;
+                            if(musicProperties.Album != "")
                                 o1.Album = musicProperties.Album;
+                            if(musicProperties.Artist != "")
                                 o1.Artist = musicProperties.Artist;
-                            }
                             o1.Name = f.Name;
-                            o1.Path = "MusicLibrary";
+                            o1.Path = f.Path;
                             SongList.Items.Add(o1);
                             songFileList.Add(o1);
                         }
@@ -196,65 +192,39 @@ namespace Argon
                 }
             }
 
+            IReadOnlyList<StorageFolder> folderList = await storageFolder.GetFoldersAsync();
+            foreach (var i in folderList)
+            {
+                await LoadFromFolder(i);
+            }
+        }
+
+        public async void LoadAudios()
+        {
+            local.Values["lastState"] = "audio";
+            SongList.Items.Clear();
+            StorageFolder sf = KnownFolders.MusicLibrary;
+            //StorageFolder sf = await DownloadsFolder.
+            await LoadFromFolder(sf);
+
             int count = int.Parse(local.Values["CountMusic"].ToString());
             for (int i = 1; i <= count; i++)
             {
                 string foldnm = "music" + i.ToString();
                 string token = local.Values[foldnm].ToString();
                 sf = await Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.GetFolderAsync(token);
-                fileList = await sf.GetFilesAsync();
-                foreach (StorageFile f in fileList)
-                {
-                    if (musicFormat.FindIndex(x => x.Equals(f.FileType, StringComparison.OrdinalIgnoreCase)) != -1)
-                    {
-                        const uint size = 100;
-                        using (StorageItemThumbnail thumbnail = await f.GetThumbnailAsync(thumbnailMode, size))
-                        {
-                            // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
-                            // (which may be returned as a fallback if the file does not provide album art) 
-                            if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
-                            {
-                                BitmapImage bitmapImage = new BitmapImage();
-                                bitmapImage.SetSource(thumbnail);
-                                MediaFile o1 = new VideoFile();
-                                VideoProperties videoProperties = await f.Properties.GetVideoPropertiesAsync();
-                                Image i1 = new Image();
-                                i1.Source = bitmapImage;
-                                o1.Thumb = i1;
-                                o1.Title = f.Name;
-                                if (videoProperties.Title != "")
-                                {
-                                    o1.Title = videoProperties.Title;
-                                }
-                                o1.Name = f.Name;
-                                o1.Path = f.Path;
-                                SongList.Items.Add(o1);
-                            }
-                        }
-                    }
-                }
+                await LoadFromFolder(sf);
             }
             LoadAlbums();
             LoadArtists();
-
         }
 
         private async void SongList_ItemClick(object sender, ItemClickEventArgs e)
         {
             Windows.Media.Playback.MediaPlaybackState i;
             StorageFile storageFile;
-            StorageFolder storageFolder;
             MediaFile file = (MediaFile)e.ClickedItem;
-            if (file.Path == "MusicLibrary")
-            {
-                storageFolder = KnownFolders.MusicLibrary;
-                storageFile = await storageFolder.GetFileAsync(file.Name);
-            }
-            else
-            {
-                storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
-            }
-            Console.WriteLine(storageFile.Path);
+            storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
             mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
             queue.Clear();
             foreach(var af in songFileList)
@@ -283,7 +253,7 @@ namespace Argon
                 string name = PlaylistName.Text;
                 NameCollisionOption collisionOption = NameCollisionOption.ReplaceExisting;
                 PlaylistFormat format = PlaylistFormat.WindowsMedia;
-                StorageFile storageFile = await sf.GetFileAsync(buttonTag);
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(buttonTag);
                 playlist.Files.Add(storageFile);
                 try
                 {
@@ -320,7 +290,7 @@ namespace Argon
                 playlist = await Windows.Media.Playlists.Playlist.LoadAsync(playlistFile);
                 NameCollisionOption collisionOption = NameCollisionOption.ReplaceExisting;
                 PlaylistFormat format = PlaylistFormat.WindowsMedia;
-                StorageFile storageFile = await sf.GetFileAsync(buttonTag);
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(buttonTag);
                 playlist.Files.Add(storageFile);
                 try
                 {
@@ -391,7 +361,7 @@ namespace Argon
                             o1.Title = musicProperties.Title;
                         }
                         o1.Name = s.Name;
-                        o1.Path = "MusicLibrary";
+                        o1.Path = s.Path;
                         PlaylistSongs.Items.Add(o1);
                     }
                 }
@@ -411,7 +381,7 @@ namespace Argon
                 PlaylistFormat format = PlaylistFormat.WindowsMedia;
                 foreach (Model.MediaFile item in PlaylistSongs.Items)
                 {
-                    StorageFile storageFile = await sf.GetFileAsync(item.Name);
+                    StorageFile storageFile = await StorageFile.GetFileFromPathAsync(item.Path);
                     playlist.Files.Add(storageFile);
                     Debug.WriteLine(item.Name);
                 }
@@ -445,11 +415,11 @@ namespace Argon
             SonglistView.IsPrimaryButtonEnabled = false;
             var listToShow = songFileList.Where(x => x.Album == albumName);
             List<StorageFile> filesToPlay = new List<StorageFile>();
-            StorageFolder musicFolder = KnownFolders.MusicLibrary;
+
             foreach(AudioFile af in listToShow)
             {
                 PlaylistSongs.Items.Add(af);
-                StorageFile sf = await musicFolder.GetFileAsync(af.Name);
+                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
                 filesToPlay.Add(sf);
             }
             PlaylistSongs.CanDragItems = false;
@@ -479,11 +449,10 @@ namespace Argon
             SonglistView.IsPrimaryButtonEnabled = false;
             var listToShow = songFileList.Where(x => x.Artist == artistName);
             List<StorageFile> filesToPlay = new List<StorageFile>();
-            StorageFolder musicFolder = KnownFolders.MusicLibrary;
             foreach (AudioFile af in listToShow)
             {
                 PlaylistSongs.Items.Add(af);
-                StorageFile sf = await musicFolder.GetFileAsync(af.Name);
+                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
                 filesToPlay.Add(sf);
             }
             PlaylistSongs.CanDragItems = false;

@@ -22,8 +22,8 @@
                         <Flyout>
                             <StackPanel>
                                 <TextBlock Text="Add to:" Margin="0,0,0,12"/>
-                                <Button Tag="{x:Bind Name}" Content="New Playlist" Width="150" Margin="0,0,0,10" Click="NewPlaylist_click" />
-                                <Button Tag="{x:Bind Name}" Content="Existing Playlist" Width="150" Margin="0,0,0,10" Click="ExistingPlaylist_Click"/>
+                                <Button Tag="{x:Bind Path}" Content="New Playlist" Width="150" Margin="0,0,0,10" Click="NewPlaylist_click" />
+                                <Button Tag="{x:Bind Path}" Content="Existing Playlist" Width="150" Margin="0,0,0,10" Click="ExistingPlaylist_Click"/>
 
                             </StackPanel>
                         </Flyout>
