@@ -245,6 +245,7 @@ namespace Argon
         {
             var buttonTag = ((Button)sender).Tag.ToString();
             Debug.WriteLine(buttonTag);
+            PlaylistList.Items.Clear();
             ContentDialogResult result = await NewPlayListDialog.ShowAsync();
             if(result == ContentDialogResult.Primary)
             {
