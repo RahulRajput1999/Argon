@@ -335,6 +335,7 @@ namespace Argon
 
         private async void PlaylistList_ItemClick(object sender, ItemClickEventArgs e)
         {
+            queue.Clear();
             PlaylistSongs.Items.Clear();
             const ThumbnailMode thumbnailMode = ThumbnailMode.MusicView;
             Model.Playlist playlistToShow = (Model.Playlist)e.ClickedItem;
@@ -342,6 +343,8 @@ namespace Argon
             Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToShow);
             foreach (var s in playlist.Files)
             {
+                var af = songFileList.Where(sf => sf.Name == s.Name).FirstOrDefault();
+                queue.Add(af);
                 const uint size = 100;
                 using (StorageItemThumbnail thumbnail = await s.GetThumbnailAsync(thumbnailMode, size))
                 {
@@ -416,7 +419,7 @@ namespace Argon
             SonglistView.IsPrimaryButtonEnabled = false;
             var listToShow = songFileList.Where(x => x.Album == albumName);
             List<StorageFile> filesToPlay = new List<StorageFile>();
-
+            
             foreach(AudioFile af in listToShow)
             {
                 PlaylistSongs.Items.Add(af);
@@ -430,8 +433,11 @@ namespace Argon
             if(result == ContentDialogResult.Secondary)
             {
                 MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                queue.Clear();
                 foreach (var f in filesToPlay)
                 {
+                    var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
+                    queue.Add(af);
                     mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
                 }
                 if (mediaPlaybackList.Items.Count != 0)
@@ -463,8 +469,11 @@ namespace Argon
             if (result == ContentDialogResult.Secondary)
             {
                 MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                queue.Clear();
                 foreach (var f in filesToPlay)
                 {
+                    var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
+                    queue.Add(af);
                     mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
                 }
                 if (mediaPlaybackList.Items.Count != 0)
@@ -515,10 +524,14 @@ namespace Argon
                 {
                     Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToPlay);
                     MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                    queue.Clear();
                     foreach (var item in playlist.Files)
                     {
+                        var af = songFileList.Where(sf => sf.Name == item.Name).FirstOrDefault();
+                        queue.Add(af);
                         mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(item)));
                     }
+                    
                     mediaPlaybackList.ShuffleEnabled = true;
                     IReadOnlyList<MediaPlaybackItem> items = mediaPlaybackList.ShuffledItems;
                     MediaPlaybackList newplaybacklist = new MediaPlaybackList();

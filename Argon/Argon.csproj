@@ -22,7 +22,7 @@
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
-    <PackageCertificateThumbprint>22531BEA5149FA870FC9EF4CF3E3278E9AE197C7</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>93FD892DF33895A0DD5403127E8666958914BE1C</PackageCertificateThumbprint>
     <AppInstallerUri>https://www.google.com</AppInstallerUri>
     <AppInstallerUpdateFrequency>1</AppInstallerUpdateFrequency>
     <AppInstallerCheckForUpdateFrequency>OnApplicationRun</AppInstallerCheckForUpdateFrequency>
