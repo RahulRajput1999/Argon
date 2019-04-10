@@ -281,6 +281,7 @@ namespace Argon
             currentPlaying = queue.IndexOf((AudioFile)e.ClickedItem);
             mediaElement.AutoPlay = true;
             mediaElement.MediaPlayer.Play();
+            Update_CurrentStatus((AudioFile)file);
         }
 
         private void MusicNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -562,6 +563,7 @@ namespace Argon
                 mediaElement.MediaPlayer.Play();
                 queue.Clear();
                 queue.Add(af);
+                Update_CurrentStatus(af);
             }
             else if(name.Contains("(Album) "))
             {
@@ -696,10 +698,20 @@ namespace Argon
         {
             AudioFile af = (AudioFile)e.ClickedItem;
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
+            Update_CurrentStatus(af);
             mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
             mediaElement.MediaPlayer.Play();
             queue.Clear();
             queue.Add(af);
+        }
+
+        public void Update_CurrentStatus(AudioFile audioFile)
+        {
+            SongThumb.Source = audioFile.Thumb.Source;
+            MusicBackground.Source = audioFile.Thumb.Source;
+            CurrentName.Text = audioFile.Name;
+            CurrentArtist.Text = audioFile.Artist;
+            CurrentAlbum.Text = audioFile.Album;
         }
     }
 }
