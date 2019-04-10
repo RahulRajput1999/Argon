@@ -17,6 +17,7 @@ using Windows.Storage;
 using Windows.UI.Core;
 using Windows.Media.Core;
 using Windows.System.Display;
+using System.Diagnostics;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -47,14 +48,32 @@ namespace Argon
                 file = (MediaFile)e.Parameter;
                 storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
                 Console.WriteLine(storageFile.Path);
-
-
             }
             else
             {
                 storageFile = (StorageFile)e.Parameter;
             }
-            mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+            bool flag = false;
+            TimedTextSource timedsource = null;
+            storageFolder =  await storageFile.GetParentAsync();
+            string subtitlename = storageFile.Name.Substring(0, storageFile.Name.LastIndexOf('.')) + ".srt";
+            try
+            {
+                StorageFile subtitle = await storageFolder.GetFileAsync(subtitlename);
+                var stream = await subtitle.OpenAsync(FileAccessMode.Read);
+                timedsource = TimedTextSource.CreateFromStream(stream);
+                flag = true;
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+            var source = MediaSource.CreateFromStorageFile(storageFile);
+            if (flag)
+                source.ExternalTimedTextSources.Add(timedsource);
+
+            mediaElement.Source = source;
+            
             mediaElement.AutoPlay = true;
             mediaElement.MediaPlayer.Play();
 

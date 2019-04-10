@@ -147,6 +147,18 @@
       <DependentUpon>Playlists.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="sublibrary\DownloadSubtitleResponse.cs" />
+    <Compile Include="sublibrary\ISubRPC.cs" />
+    <Compile Include="sublibrary\LogInResponse.cs" />
+    <Compile Include="sublibrary\LogOutResponse.cs" />
+    <Compile Include="sublibrary\MovieInfo.cs" />
+    <Compile Include="sublibrary\OSIntermediary.cs" />
+    <Compile Include="sublibrary\SearchSubtitlesResponse.cs" />
+    <Compile Include="sublibrary\SubInfo.cs" />
+    <Compile Include="sublibrary\SubtitleEntry.cs" />
+    <Compile Include="Subtitle.xaml.cs">
+      <DependentUpon>Subtitle.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Videos.xaml.cs">
       <DependentUpon>Videos.xaml</DependentUpon>
     </Compile>
@@ -232,12 +244,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Subtitle.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Videos.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Kveer.XmlRPC">
+      <Version>1.1.1</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.3</Version>
     </PackageReference>
@@ -246,6 +265,11 @@
     <SDKReference Include="WindowsDesktop, Version=10.0.17763.0">
       <Name>Windows Desktop Extensions for the UWP</Name>
     </SDKReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="GetHash">
+      <HintPath>C:\Users\Hardik Solanki\Desktop\Subloader-master\SubLoad\bin\Release\GetHash.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
