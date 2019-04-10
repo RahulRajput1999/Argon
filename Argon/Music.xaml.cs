@@ -21,6 +21,7 @@ using Windows.Media.Playlists;
 using System.Diagnostics;
 using Windows.Media.Playback;
 using System.Threading.Tasks;
+using Argon.Library;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -39,6 +40,8 @@ namespace Argon
         List<AudioFile> songFileList = new List<AudioFile>();
         List<AudioFile> queue = new List<AudioFile>();
         int currentPlaying;
+        HashSet<string> artistSet = new HashSet<string>();
+        List<string> autoItems = new List<string>(); 
         public Music()
         {
             this.InitializeComponent();
@@ -127,6 +130,7 @@ namespace Argon
                 foreach (var x in albumList)
                 {
                     AlbumListView.Items.Add(x.Album);
+                    autoItems.Add("(Album) " + x.Album);
                 }
             }
             else
@@ -144,7 +148,16 @@ namespace Argon
                 var artistList = songFileList.GroupBy(x => x.Artist).Select(g => g.First());
                 foreach (var x in artistList)
                 {
-                    ArtistListView.Items.Add(x.Artist);
+                    string[] artistsList = x.Artist.Split(new char[] { ',','-' });
+                    foreach(var y in artistsList)
+                    {
+                        artistSet.Add(y.Trim());
+                    }
+                }
+                foreach(string artistName in artistSet)
+                {
+                    ArtistListView.Items.Add(artistName);
+                    autoItems.Add("(Artist) " + artistName);
                 }
             }
             else
@@ -181,12 +194,20 @@ namespace Argon
                                 o1.Title = musicProperties.Title;
                             if(musicProperties.Album != "")
                                 o1.Album = musicProperties.Album;
-                            if(musicProperties.Artist != "")
-                                o1.Artist = musicProperties.Artist;
+                            string[] contributingArtistsKey = { "System.Music.Artist" };
+                            IDictionary<string, object> contributingArtistsProperty =
+                                await musicProperties.RetrievePropertiesAsync(contributingArtistsKey);
+                            string[] contributingArtists = contributingArtistsProperty["System.Music.Artist"] as string[];
+                            o1.Artist = "";
+                            foreach (string contributingArtist in contributingArtists)
+                            {
+                                o1.Artist += contributingArtist;
+                            }
                             o1.Name = f.Name;
                             o1.Path = f.Path;
                             SongList.Items.Add(o1);
                             songFileList.Add(o1);
+                            autoItems.Add("(Song) " + o1.Name);
                         }
                     }
                 }
@@ -227,9 +248,15 @@ namespace Argon
             storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
             mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
             queue.Clear();
+            bool start=false;
             foreach(var af in songFileList)
             {
-                queue.Add(af);
+                if(start == false && file.Name == af.Name)
+                {
+                    start = true;
+                }
+                if(start)
+                    queue.Add(af);
             }
             currentPlaying = queue.IndexOf((AudioFile)e.ClickedItem);
             mediaElement.AutoPlay = true;
@@ -411,77 +438,16 @@ namespace Argon
             }
         }
 
-        private async void AlbumListView_ItemClick(object sender, ItemClickEventArgs e)
+        private void AlbumListView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            PlaylistSongs.Items.Clear();
             string albumName= (string)e.ClickedItem;
-            SonglistView.Title = albumName;
-            SonglistView.IsPrimaryButtonEnabled = false;
-            var listToShow = songFileList.Where(x => x.Album == albumName);
-            List<StorageFile> filesToPlay = new List<StorageFile>();
-            
-            foreach(AudioFile af in listToShow)
-            {
-                PlaylistSongs.Items.Add(af);
-                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
-                filesToPlay.Add(sf);
-            }
-            PlaylistSongs.CanDragItems = false;
-            PlaylistSongs.CanReorderItems = false;
-            PlaylistSongs.AllowDrop = false;
-            ContentDialogResult result = await SonglistView.ShowAsync();
-            if(result == ContentDialogResult.Secondary)
-            {
-                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
-                queue.Clear();
-                foreach (var f in filesToPlay)
-                {
-                    var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
-                    queue.Add(af);
-                    mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
-                }
-                if (mediaPlaybackList.Items.Count != 0)
-                {
-                    mediaElement.Source = mediaPlaybackList;
-                    mediaElement.MediaPlayer.Play();
-                }
-            }
+            Load_AlbumWindow(albumName);
         }
 
-        private async void ArtistListView_ItemClick(object sender, ItemClickEventArgs e)
+        private void ArtistListView_ItemClick(object sender, ItemClickEventArgs e)
         {
-            PlaylistSongs.Items.Clear();
             string artistName = (string)e.ClickedItem;
-            SonglistView.Title = artistName;
-            SonglistView.IsPrimaryButtonEnabled = false;
-            var listToShow = songFileList.Where(x => x.Artist == artistName);
-            List<StorageFile> filesToPlay = new List<StorageFile>();
-            foreach (AudioFile af in listToShow)
-            {
-                PlaylistSongs.Items.Add(af);
-                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
-                filesToPlay.Add(sf);
-            }
-            PlaylistSongs.CanDragItems = false;
-            PlaylistSongs.CanReorderItems = false;
-            PlaylistSongs.AllowDrop = false;
-            ContentDialogResult result = await SonglistView.ShowAsync();
-            if (result == ContentDialogResult.Secondary)
-            {
-                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
-                queue.Clear();
-                foreach (var f in filesToPlay)
-                {
-                    var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
-                    queue.Add(af);
-                    mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
-                }
-                if (mediaPlaybackList.Items.Count != 0)
-                {
-                    mediaElement.Source = mediaPlaybackList;
-                    mediaElement.MediaPlayer.Play();
-                }
-            }
+            Load_ArtistWindow(artistName);
         }
 
         private async void QueueButton_Click(object sender, RoutedEventArgs e)
@@ -544,6 +510,117 @@ namespace Argon
                         mediaElement.Source = newplaybacklist;
                         mediaElement.MediaPlayer.Play();
                     }
+                }
+            }
+        }
+
+        private void AutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var Auto = (AutoSuggestBox)sender;
+            var Suggestion = autoItems.Where(p => p.Contains(Auto.Text, StringComparison.OrdinalIgnoreCase)).ToArray();
+            Auto.ItemsSource = Suggestion;
+        }
+
+        private void AutoSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            string item = (string) args.SelectedItem;
+            string name = item;
+            string type = null; 
+            if(name.Contains("(Song) "))
+            {
+                type = "(Song) ";
+                name = StringOperations.TrimSearchString(type, name);
+            }
+            else if(name.Contains("(Album) "))
+            {
+                type = "(Album) ";
+                name = StringOperations.TrimSearchString(type, name);
+                Load_AlbumWindow(name);
+            }
+            else if(name.Contains("(Artist) "))
+            {
+                type = "(Artist) ";
+                name = StringOperations.TrimSearchString(type, name);
+                Load_ArtistWindow(name);
+            }
+
+
+        }
+
+        private void AutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            var Auto = (AutoSuggestBox)sender;
+            var Suggestion = autoItems.Where(p => p.Contains(Auto.Text, StringComparison.OrdinalIgnoreCase)).ToArray();
+            Auto.ItemsSource = Suggestion;
+        }
+
+        private async void Load_ArtistWindow(string artistName)
+        {
+            PlaylistSongs.Items.Clear();
+            SonglistView.Title = artistName;
+            SonglistView.IsPrimaryButtonEnabled = false;
+            var listToShow = songFileList.Where(x => x.Artist.Contains(artistName));
+            List<StorageFile> filesToPlay = new List<StorageFile>();
+            foreach (AudioFile af in listToShow)
+            {
+                PlaylistSongs.Items.Add(af);
+                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
+                filesToPlay.Add(sf);
+            }
+            PlaylistSongs.CanDragItems = false;
+            PlaylistSongs.CanReorderItems = false;
+            PlaylistSongs.AllowDrop = false;
+            ContentDialogResult result = await SonglistView.ShowAsync();
+            if (result == ContentDialogResult.Secondary)
+            {
+                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                queue.Clear();
+                foreach (var f in filesToPlay)
+                {
+                    var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
+                    queue.Add(af);
+                    mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                }
+                if (mediaPlaybackList.Items.Count != 0)
+                {
+                    mediaElement.Source = mediaPlaybackList;
+                    mediaElement.MediaPlayer.Play();
+                }
+            }
+        }
+
+        private async void Load_AlbumWindow(string albumName)
+        {
+            PlaylistSongs.Items.Clear();
+            SonglistView.Title = albumName;
+            SonglistView.IsPrimaryButtonEnabled = false;
+            var listToShow = songFileList.Where(x => x.Album == albumName);
+            List<StorageFile> filesToPlay = new List<StorageFile>();
+
+            foreach (AudioFile af in listToShow)
+            {
+                PlaylistSongs.Items.Add(af);
+                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
+                filesToPlay.Add(sf);
+            }
+            PlaylistSongs.CanDragItems = false;
+            PlaylistSongs.CanReorderItems = false;
+            PlaylistSongs.AllowDrop = false;
+            ContentDialogResult result = await SonglistView.ShowAsync();
+            if (result == ContentDialogResult.Secondary)
+            {
+                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                queue.Clear();
+                foreach (var f in filesToPlay)
+                {
+                    var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
+                    queue.Add(af);
+                    mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                }
+                if (mediaPlaybackList.Items.Count != 0)
+                {
+                    mediaElement.Source = mediaPlaybackList;
+                    mediaElement.MediaPlayer.Play();
                 }
             }
         }

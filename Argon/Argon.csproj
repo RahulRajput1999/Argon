@@ -130,6 +130,7 @@
     <Compile Include="DisplayPlaylist.xaml.cs">
       <DependentUpon>DisplayPlaylist.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Library\StringOperations.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

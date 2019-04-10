@@ -42,6 +42,7 @@
     </Page.Resources>
     <Grid Name="grid">
         <CommandBar DefaultLabelPosition="Right">
+            
             <AppBarButton Icon="List" x:Name="QueueButton" Label="Queue" Click="QueueButton_Click"></AppBarButton>
             <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" IsEnabled="True" Click="AddLibraryButton_Click"></AppBarButton>
             <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Music" Click="BrowseButton_Click"></AppBarButton>
@@ -49,7 +50,12 @@
                 <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
             </CommandBar.SecondaryCommands>
         </CommandBar>
-        <Pivot Margin="0,40,0,204">
+        <AutoSuggestBox x:Name="MusicSearchBox" PlaceholderText="Serch for songs,albums and artists"
+        TextChanged="AutoSuggestBox_TextChanged"
+        QueryIcon="Find"
+        QuerySubmitted="AutoSuggestBox_QuerySubmitted"
+        SuggestionChosen="AutoSuggestBox_SuggestionChosen" Margin="0,40,0,0" HorizontalAlignment="Left" Width="500"/>
+        <Pivot Margin="0,70,0,204">
             <PivotItem Header="Songs">
                 <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,10,0,10" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">
                     <GridView.ItemsPanel>
