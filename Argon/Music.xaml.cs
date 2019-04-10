@@ -41,6 +41,7 @@ namespace Argon
         List<AudioFile> queue = new List<AudioFile>();
         int currentPlaying;
         HashSet<string> artistSet = new HashSet<string>();
+        HashSet<string> genreSet = new HashSet<string>();
         List<string> autoItems = new List<string>(); 
         public Music()
         {
@@ -167,6 +168,27 @@ namespace Argon
 
         }
 
+        public void LoadGenre()
+        {
+            GenreListView.Items.Clear();
+            if(songFileList != null)
+            {
+                foreach(AudioFile af in songFileList)
+                {
+                    Debug.WriteLine("Reading Genres:");
+                    foreach(string gn in af.Genre)
+                    {
+                        genreSet.Add(gn);
+                        Debug.WriteLine(gn);
+                    }
+                }
+                foreach(string gn in genreSet)
+                {
+                    GenreListView.Items.Add(gn);
+                }
+            }
+        }
+
         public async Task LoadFromFolder(StorageFolder storageFolder)
         {
             IReadOnlyList<StorageFile> fileList = await storageFolder.GetFilesAsync();
@@ -188,21 +210,19 @@ namespace Argon
                             i.Source = bitmapImage;
                             o1.Thumb = i;
                             o1.Title = f.Name;
-                            o1.Album = "Unknown";
-                            o1.Artist = "Unknown";
                             if (musicProperties.Title != "")
                                 o1.Title = musicProperties.Title;
                             if(musicProperties.Album != "")
                                 o1.Album = musicProperties.Album;
                             string[] contributingArtistsKey = { "System.Music.Artist" };
-                            IDictionary<string, object> contributingArtistsProperty =
-                                await musicProperties.RetrievePropertiesAsync(contributingArtistsKey);
+                            IDictionary<string, object> contributingArtistsProperty = await musicProperties.RetrievePropertiesAsync(contributingArtistsKey);
                             string[] contributingArtists = contributingArtistsProperty["System.Music.Artist"] as string[];
                             o1.Artist = "";
                             foreach (string contributingArtist in contributingArtists)
                             {
                                 o1.Artist += contributingArtist;
                             }
+                            o1.Genre = musicProperties.Genre.ToList();
                             o1.Name = f.Name;
                             o1.Path = f.Path;
                             SongList.Items.Add(o1);
@@ -238,6 +258,7 @@ namespace Argon
             }
             LoadAlbums();
             LoadArtists();
+            LoadGenre();
         }
 
         private async void SongList_ItemClick(object sender, ItemClickEventArgs e)
@@ -513,6 +534,12 @@ namespace Argon
             }
         }
 
+        private void GenreListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            string genreName = (string)e.ClickedItem;
+            Load_GenreWindow(genreName);
+        }
+
         private void AutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             var Auto = (AutoSuggestBox)sender;
@@ -628,6 +655,51 @@ namespace Argon
                     mediaElement.MediaPlayer.Play();
                 }
             }
+        }
+
+        private async void Load_GenreWindow(string genreName)
+        {
+            PlaylistSongs.Items.Clear();
+            SonglistView.Title = genreName;
+            SonglistView.IsPrimaryButtonEnabled = false;
+            var listToShow = songFileList.Where(x => x.Genre.Contains(genreName));
+            List<StorageFile> filesToPlay = new List<StorageFile>();
+            foreach (AudioFile af in listToShow)
+            {
+                PlaylistSongs.Items.Add(af);
+                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
+                filesToPlay.Add(sf);
+            }
+            PlaylistSongs.CanDragItems = false;
+            PlaylistSongs.CanReorderItems = false;
+            PlaylistSongs.AllowDrop = false;
+            ContentDialogResult result = await SonglistView.ShowAsync();
+            if (result == ContentDialogResult.Secondary)
+            {
+                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                queue.Clear();
+                foreach (var f in filesToPlay)
+                {
+                    var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
+                    queue.Add(af);
+                    mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                }
+                if (mediaPlaybackList.Items.Count != 0)
+                {
+                    mediaElement.Source = mediaPlaybackList;
+                    mediaElement.MediaPlayer.Play();
+                }
+            }
+        }
+
+        private async void PlaylistSongs_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            AudioFile af = (AudioFile)e.ClickedItem;
+            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
+            mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+            mediaElement.MediaPlayer.Play();
+            queue.Clear();
+            queue.Add(af);
         }
     }
 }

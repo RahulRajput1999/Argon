@@ -71,6 +71,9 @@
             <PivotItem Header="Artists">
                 <ListView x:Name="ArtistListView" ItemClick="ArtistListView_ItemClick" IsItemClickEnabled="True"/>
             </PivotItem>
+            <PivotItem Header="Genere">
+                <ListView x:Name="GenreListView" ItemClick="GenreListView_ItemClick" IsItemClickEnabled="True"/>
+            </PivotItem>
             <PivotItem Header="Playlists">
                 <GridView ItemTemplate="{StaticResource PlaylistTemplate}" x:Name="PlaylistList1" HorizontalAlignment="Left" Margin="15,10,0,100" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="PlaylistList_ItemClick">
                     <GridView.ItemsPanel>
@@ -151,7 +154,7 @@
         DefaultButton="Primary" d:IsHidden="True">
 
             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                <ListView x:Name="PlaylistSongs" SelectionMode="Single">
+                <ListView x:Name="PlaylistSongs" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="PlaylistSongs_ItemClick">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="model:MediaFile">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="1500">
