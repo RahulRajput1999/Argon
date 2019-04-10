@@ -242,7 +242,6 @@ namespace Argon
 
         private async void SongList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            Windows.Media.Playback.MediaPlaybackState i;
             StorageFile storageFile;
             MediaFile file = (MediaFile)e.ClickedItem;
             storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
@@ -521,7 +520,7 @@ namespace Argon
             Auto.ItemsSource = Suggestion;
         }
 
-        private void AutoSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        private async void AutoSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
         {
             string item = (string) args.SelectedItem;
             string name = item;
@@ -530,6 +529,12 @@ namespace Argon
             {
                 type = "(Song) ";
                 name = StringOperations.TrimSearchString(type, name);
+                AudioFile af = songFileList.Where(s => s.Name == name).FirstOrDefault();
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
+                mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+                mediaElement.MediaPlayer.Play();
+                queue.Clear();
+                queue.Add(af);
             }
             else if(name.Contains("(Album) "))
             {
