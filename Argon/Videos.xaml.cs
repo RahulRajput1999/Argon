@@ -18,6 +18,9 @@ using Windows.UI.Xaml.Media.Imaging;
 using Argon.Model;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using SubLib;
+using System.Collections.ObjectModel;
+using System.Text;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -39,12 +42,31 @@ namespace Argon
             return x.Title.CompareTo(y.Title);
         }
     }
+    class SubtitleComparator : IComparer<SubInfo>
+    {
+        public int Compare(SubInfo x, SubInfo y)
+        {
+            if (x == null || y == null)
+            {
+                return 0;
+            }
+            return x.LanguageName.CompareTo(y.LanguageName);
+        }
+    }
     public sealed partial class Videos : Page
     {
         ApplicationDataContainer local;
         List<string> videoFormat = new List<string>() { ".mov", ".mp4", ".mkv" };
         List<string> autoList = new List<string>();
         List<VideoFile> videoFiles = new List<VideoFile>();
+        private const int MaxAttempts = 10;
+
+        private OSIntermediary messenger = new OSIntermediary();
+        private string currentPath = Windows.ApplicationModel.Package.Current.InstalledLocation.Path;
+        private List<string> languages = new List<string>();
+        private bool isConfigRead = false;
+        private ObservableCollection<SubtitleEntry> collection = new ObservableCollection<SubtitleEntry>();
+
         public Videos()
         {
             this.InitializeComponent();
@@ -52,6 +74,14 @@ namespace Argon
             local = ApplicationData.Current.LocalSettings;
             LoadVideos();
             
+        }
+
+        public ObservableCollection<SubtitleEntry> Collection
+        {
+            get
+            {
+                return this.collection;
+            }
         }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -206,6 +236,110 @@ namespace Argon
             {
                 superParent.Navigate(typeof(Player), vf);
             }
+        }
+
+        private static byte[] ComputeMovieHash(Stream input)
+        {
+            long lhash;
+            long streamsize;
+            streamsize = input.Length;
+            lhash = streamsize;
+
+            long i = 0;
+            byte[] buffer = new byte[sizeof(long)];
+            while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
+            {
+                i++;
+                lhash += BitConverter.ToInt64(buffer, 0);
+            }
+
+            input.Position = Math.Max(0, streamsize - 65536);
+            i = 0;
+            while (i < 65536 / sizeof(long) && (input.Read(buffer, 0, sizeof(long)) > 0))
+            {
+                i++;
+                lhash += BitConverter.ToInt64(buffer, 0);
+            }
+            input.Close();
+            byte[] result = BitConverter.GetBytes(lhash);
+            Array.Reverse(result);
+            return result;
+        }
+
+        private static string ToHexadecimal(byte[] bytes)
+        {
+            StringBuilder hexBuilder = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                hexBuilder.Append(bytes[i].ToString("x2"));
+            }
+            return hexBuilder.ToString();
+        }
+
+        private async void MenuFlyoutItem_Click(object sender, RoutedEventArgs e)
+        {
+            string path = ((MenuFlyoutItem)sender).Tag.ToString();
+            Debug.WriteLine(((MenuFlyoutItem)sender).Tag);
+            StorageFile file = await StorageFile.GetFileFromPathAsync(path);
+            if (file != null)
+            {
+                string hex;
+                double length;
+                this.Collection.Clear();
+
+                Stream stream = await file.OpenStreamForReadAsync();
+                byte[] result = ComputeMovieHash(stream);
+                hex = ToHexadecimal(result);
+                var properties = await file.GetBasicPropertiesAsync();
+                length = properties.Size;
+
+                await Task.Run(() => this.messenger.OSLogIn());
+
+                SearchSubtitlesResponse ssre = null;
+                SubInfo subtitle = null;
+                await Task.Run(() => this.messenger.SearchOS(hex, length, "all", ref ssre));
+                //List<string> subtitles = new List<string>();
+                List<SubInfo> subtitles = new List<SubInfo>();
+                List<string> subInfo = new List<string>();
+                foreach (SubInfo info in ssre.data)
+                {
+                    subtitles.Add(info);
+                }
+                SubtitleComparator c = new SubtitleComparator();
+                subtitles.Sort(c);
+                foreach(var x in subtitles)
+                {
+                    SubtitleList.Items.Add(x);
+                }
+                SubtitleDialog.IsPrimaryButtonEnabled = false;
+                ContentDialogResult DialogResult = await SubtitleDialog.ShowAsync();
+                if(DialogResult == ContentDialogResult.Primary)
+                {
+                    SubInfo selectedSubtitle = (SubInfo)SubtitleList.SelectedItem;
+                    byte[] subtitleStream = null;
+                    if (selectedSubtitle != null)
+                    {
+                        await Task.Run(() => this.messenger.DownloadSubtitle(int.Parse(selectedSubtitle.IDSubtitleFile), ref subtitleStream));
+                        StorageFolder sf = await file.GetParentAsync();
+                        string subtitlename = file.Name.Substring(0, file.Name.LastIndexOf('.'));
+                        StorageFile sfile = await sf.CreateFileAsync(subtitlename + ".srt",CreationCollisionOption.ReplaceExisting);
+                        await FileIO.WriteBytesAsync(sfile, subtitleStream);
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Subtitle not found");
+                    }
+
+                }
+
+
+
+            }
+        }
+
+        private void SubtitleList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            SubtitleDialog.IsPrimaryButtonEnabled = true;
         }
     }
 }

@@ -54,11 +54,23 @@
                 <AppBarButton Icon="Clock" x:Name="SleepTimer" Click="SleepTimer_Click" Label="Sleep Timer"/>
             </CommandBar.SecondaryCommands>
 
-            <AppBarButton Icon="List" x:Name="QueueButton" Label="Queue" Click="QueueButton_Click"/>
-            <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" IsEnabled="True" Click="AddLibraryButton_Click"/>
-            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Music" Click="BrowseButton_Click"/>
+            <AppBarButton Icon="List" x:Name="QueueButton" Label="Queue" Click="QueueButton_Click">
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="Q" Modifiers="Control"></KeyboardAccelerator>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
+            <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" IsEnabled="True" Click="AddLibraryButton_Click">
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="A" Modifiers="Control"></KeyboardAccelerator>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
+            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Music" Click="BrowseButton_Click">
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="B" Modifiers="Control"></KeyboardAccelerator>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
         </CommandBar>
-        <AutoSuggestBox x:Name="MusicSearchBox" PlaceholderText="Serch for songs,albums and artists"
+        <AutoSuggestBox x:Name="MusicSearchBox" PlaceholderText="Search for songs,albums and artists"
         TextChanged="AutoSuggestBox_TextChanged"
         QueryIcon="Find"
         QuerySubmitted="AutoSuggestBox_QuerySubmitted"
@@ -79,7 +91,7 @@
             <PivotItem Header="Artists">
                 <ListView x:Name="ArtistListView" ItemClick="ArtistListView_ItemClick" IsItemClickEnabled="True"/>
             </PivotItem>
-            <PivotItem Header="Genere">
+            <PivotItem Header="Genre">
                 <ListView x:Name="GenreListView" ItemClick="GenreListView_ItemClick" IsItemClickEnabled="True"/>
             </PivotItem>
             <PivotItem Header="Playlists">
@@ -183,7 +195,7 @@
         x:Name="SonglistView"
         SecondaryButtonText="Play"
         CloseButtonText="Close"
-        DefaultButton="Primary" d:IsHidden="True">
+        DefaultButton="Primary">
 
             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <ListView x:Name="PlaylistSongs" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="PlaylistSongs_ItemClick">

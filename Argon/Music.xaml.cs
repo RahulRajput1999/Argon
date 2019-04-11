@@ -715,6 +715,12 @@ namespace Argon
         //Updates the current playing track info panel above mediaelement and background.
         public void Update_CurrentStatus(AudioFile audioFile)
         {
+            if (audioFile.Name == null)
+                audioFile.Name = "Unknown";
+            if (audioFile.Artist == null)
+                audioFile.Artist = "Unknown";
+            if (audioFile.Album == null)
+                audioFile.Album = "Unknown";
             SongThumb.Source = audioFile.Thumb.Source;
             MusicBackground.Source = audioFile.Thumb.Source;
             CurrentName.Text = audioFile.Name;
@@ -783,33 +789,6 @@ namespace Argon
                     currentPlaying = -1;
                 }
             }
-        }
-
-        private async void PlaylistSongs_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            AudioFile af = (AudioFile)e.ClickedItem;
-            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
-            Update_CurrentStatus(af);
-            mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
-            mediaElement.MediaPlayer.Play();
-            queue.Clear();
-            queue.Add(af);
-        }
-
-        public void Update_CurrentStatus(AudioFile audioFile)
-        {
-
-            if (audioFile.Name == null)
-                audioFile.Name = "Unknown";
-            if (audioFile.Artist == null)
-                audioFile.Artist = "Unknown";
-            if (audioFile.Album == null)
-                audioFile.Album = "Unknown";
-            SongThumb.Source = audioFile.Thumb.Source;
-            MusicBackground.Source = audioFile.Thumb.Source;
-            CurrentName.Text = audioFile.Name;
-            CurrentArtist.Text = audioFile.Artist;
-            CurrentAlbum.Text = audioFile.Album;
         }
     }
 }

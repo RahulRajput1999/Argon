@@ -23,6 +23,7 @@ using System.Text;
 using Windows.Data.Json;
 using System.Net.Http;
 using System.Threading;
+using System.Diagnostics;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -120,11 +121,20 @@ namespace Argon
                 }
 
                 byte[] subtitleStream = null;
-                await Task.Run(() => this.messenger.DownloadSubtitle(int.Parse(subtitle.IDSubtitleFile), ref subtitleStream));
-                StorageFolder sf = await file.GetParentAsync();
-                string subtitlename = file.Name.Substring(0,file.Name.LastIndexOf('.'));
-                StorageFile sfile = await sf.CreateFileAsync(subtitlename + ".srt");
-                await FileIO.WriteBytesAsync(sfile, subtitleStream);
+                if(subtitle != null)
+                {
+                    await Task.Run(() => this.messenger.DownloadSubtitle(int.Parse(subtitle.IDSubtitleFile), ref subtitleStream));
+                    StorageFolder sf = await file.GetParentAsync();
+                    string subtitlename = file.Name.Substring(0, file.Name.LastIndexOf('.'));
+                    StorageFile sfile = await sf.CreateFileAsync(subtitlename + ".srt");
+                    await FileIO.WriteBytesAsync(sfile, subtitleStream);
+                }
+                else
+                {
+                    Debug.WriteLine("Subtitle not found");
+                }
+                
+                
             }
         }
     }

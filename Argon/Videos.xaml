@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:model="using:Argon.Model"
+    xmlns:lib="using:SubLib"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -10,13 +11,20 @@
 
     <Page.Resources>
         <DataTemplate x:Key="Media" x:DataType="model:MediaFile">
-            <StackPanel x:Name="mypanel" Height="200" Width="250">
+            <StackPanel x:Name="mypanel" Height="250" Width="250">
                 <Border Height="150" Width="250" BorderThickness="5,5,5,5" Background="Black">
                     <Image Source="{x:Bind Thumb.Source}" Height="150" Width="250" PointerEntered="FileHolder_PointerEntered"/>
                 </Border>
                 <TextBlock MaxLines="2" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Bind Title}" Margin="0,0,0,10"/>
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Name}"/>
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
+                <Button Content="Option">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Download Subtitle" Click="MenuFlyoutItem_Click" Tag="{x:Bind Path}"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
         </DataTemplate>
         <AcrylicBrush x:Key="BackgroundImageBrush" BackgroundSource="Backdrop"
@@ -26,13 +34,18 @@
         <Image x:Name="VideoBackGround" Stretch="Fill" Width="1500" Height="955"/>
         <Rectangle Opacity="1" Fill="{StaticResource BackgroundImageBrush}" Height="960" VerticalAlignment="Top" Margin="0,40,0,0" HorizontalAlignment="Stretch"/>
         <CommandBar DefaultLabelPosition="Right">
-            <CommandBar.SecondaryCommands>
-                <AppBarButton Icon="Account" x:Name="About" Label="About"/>
-            </CommandBar.SecondaryCommands>
-            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click"/>
-            <AppBarButton Icon="Add" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"/>
+            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click">
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="B" Modifiers="Control"></KeyboardAccelerator>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
+            <AppBarButton Icon="Add" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click">
+                <AppBarButton.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="A" Modifiers="Control"></KeyboardAccelerator>
+                </AppBarButton.KeyboardAccelerators>
+            </AppBarButton>
         </CommandBar>
-        <AutoSuggestBox x:Name="VideoSearchBox" PlaceholderText="Serch for movies"
+        <AutoSuggestBox x:Name="VideoSearchBox" PlaceholderText="Search for movies"
             TextChanged="VideoSearchBox_TextChanged"
             QueryIcon="Find"
             QuerySubmitted="VideoSearchBox_QuerySubmitted"
@@ -41,5 +54,27 @@
         <GridView ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/>
         <ProgressRing x:Name="VideoProgressRing" HorizontalAlignment="Center" VerticalAlignment="Center" Height="110" Width="110" IsActive="True"/>
 
+        <ContentDialog
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            Title="Select Subtitle to Downlosd"
+            x:Name="SubtitleDialog"
+            PrimaryButtonText="Download"
+            CloseButtonText="Cancel"
+            DefaultButton="Primary" d:IsHidden="True">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible" VerticalScrollMode="Enabled">
+                <ListView x:Name="SubtitleList" HorizontalAlignment="Center" VerticalAlignment="Center"  SelectionMode="Single" IsItemClickEnabled="True" ItemClick="SubtitleList_ItemClick">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="lib:SubInfo">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="1500">
+                                <TextBlock Width="300" MaxLines="1" TextAlignment="Left" TextWrapping="Wrap" Text="{x:Bind SubFileName}" Margin="10,10,10,10"/>
+                                <TextBlock Text="{x:Bind LanguageName}"/>
+                                <TextBlock Visibility="Collapsed" Text="{x:Bind IDSubtitleFile}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </ScrollViewer>
+        </ContentDialog>
     </Grid>
 </Page>
