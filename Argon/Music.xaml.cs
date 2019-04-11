@@ -234,9 +234,12 @@ namespace Argon
                             IDictionary<string, object> contributingArtistsProperty = await musicProperties.RetrievePropertiesAsync(contributingArtistsKey);
                             string[] contributingArtists = contributingArtistsProperty["System.Music.Artist"] as string[];
                             o1.Artist = "";
-                            foreach (string contributingArtist in contributingArtists)
+                            if (contributingArtists != null)
                             {
-                                o1.Artist += contributingArtist;
+                                foreach (string contributingArtist in contributingArtists)
+                                {
+                                    o1.Artist += contributingArtist;
+                                }
                             }
                             o1.Genre = musicProperties.Genre.ToList();
                             o1.Name = f.Name;
@@ -259,6 +262,7 @@ namespace Argon
         //Responsible for loading audio files from library.
         public async void LoadAudios()
         {
+           
             local.Values["lastState"] = "audio";
             SongList.Items.Clear();
             StorageFolder sf = KnownFolders.MusicLibrary;
@@ -779,7 +783,33 @@ namespace Argon
                     currentPlaying = -1;
                 }
             }
-            
+        }
+
+        private async void PlaylistSongs_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            AudioFile af = (AudioFile)e.ClickedItem;
+            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
+            Update_CurrentStatus(af);
+            mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+            mediaElement.MediaPlayer.Play();
+            queue.Clear();
+            queue.Add(af);
+        }
+
+        public void Update_CurrentStatus(AudioFile audioFile)
+        {
+
+            if (audioFile.Name == null)
+                audioFile.Name = "Unknown";
+            if (audioFile.Artist == null)
+                audioFile.Artist = "Unknown";
+            if (audioFile.Album == null)
+                audioFile.Album = "Unknown";
+            SongThumb.Source = audioFile.Thumb.Source;
+            MusicBackground.Source = audioFile.Thumb.Source;
+            CurrentName.Text = audioFile.Name;
+            CurrentArtist.Text = audioFile.Artist;
+            CurrentAlbum.Text = audioFile.Album;
         }
     }
 }
