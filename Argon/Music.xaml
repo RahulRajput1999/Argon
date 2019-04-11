@@ -39,17 +39,31 @@
                 <AppBarButton Tag="{x:Bind Name}" Icon="Shuffle" ToolTipService.ToolTip="Shuffle" Height="40" Click="ShuffleButton_Click"/>
             </StackPanel>
         </DataTemplate>
+        <AcrylicBrush x:Key="ImageBrush" BackgroundSource="Backdrop"
+            TintOpacity="0" TintColor="#FF000000" FallbackColor="Black" />
+        <AcrylicBrush x:Key="BackgroundImageBrush" BackgroundSource="Backdrop"
+            TintOpacity="0.4" TintColor="#FF000000" FallbackColor="Black" />
+
     </Page.Resources>
     <Grid Name="grid">
+        <Image x:Name="MusicBackground" Stretch="Fill" Width="1500" Height="955"/>
+        <Rectangle Opacity="1" Fill="{StaticResource BackgroundImageBrush}" Height="960" VerticalAlignment="Top" Margin="0,40,0,0" HorizontalAlignment="Stretch"/>
         <CommandBar DefaultLabelPosition="Right">
-            <AppBarButton Icon="List" x:Name="QueueButton" Label="Queue" Click="QueueButton_Click"></AppBarButton>
-            <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" IsEnabled="True" Click="AddLibraryButton_Click"></AppBarButton>
-            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Music" Click="BrowseButton_Click"></AppBarButton>
+
             <CommandBar.SecondaryCommands>
-                <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
+                <AppBarButton Icon="Clock" x:Name="SleepTimer" Click="SleepTimer_Click" Label="Sleep Timer"/>
             </CommandBar.SecondaryCommands>
+
+            <AppBarButton Icon="List" x:Name="QueueButton" Label="Queue" Click="QueueButton_Click"/>
+            <AppBarButton Icon="Library" x:Name="AddLibraryButton" Label="Add Library" IsEnabled="True" Click="AddLibraryButton_Click"/>
+            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Music" Click="BrowseButton_Click"/>
         </CommandBar>
-        <Pivot Margin="0,40,0,204">
+        <AutoSuggestBox x:Name="MusicSearchBox" PlaceholderText="Serch for songs,albums and artists"
+        TextChanged="AutoSuggestBox_TextChanged"
+        QueryIcon="Find"
+        QuerySubmitted="AutoSuggestBox_QuerySubmitted"
+        SuggestionChosen="AutoSuggestBox_SuggestionChosen" Margin="0,40,0,0" HorizontalAlignment="Left" Width="500"/>
+        <Pivot x:Name="MusicPivot" Margin="0,70,0,204">
             <PivotItem Header="Songs">
                 <GridView ItemTemplate="{StaticResource Media}" x:Name="SongList" HorizontalAlignment="Left" Margin="15,10,0,10" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="SongList_ItemClick">
                     <GridView.ItemsPanel>
@@ -65,6 +79,9 @@
             <PivotItem Header="Artists">
                 <ListView x:Name="ArtistListView" ItemClick="ArtistListView_ItemClick" IsItemClickEnabled="True"/>
             </PivotItem>
+            <PivotItem Header="Genere">
+                <ListView x:Name="GenreListView" ItemClick="GenreListView_ItemClick" IsItemClickEnabled="True"/>
+            </PivotItem>
             <PivotItem Header="Playlists">
                 <GridView ItemTemplate="{StaticResource PlaylistTemplate}" x:Name="PlaylistList1" HorizontalAlignment="Left" Margin="15,10,0,100" VerticalAlignment="Top" MaxHeight="793" IsItemClickEnabled="True" ItemClick="PlaylistList_ItemClick">
                     <GridView.ItemsPanel>
@@ -75,7 +92,14 @@
                 </GridView>
             </PivotItem>
         </Pivot>
-        <MediaPlayerElement Height="100" x:Name="mediaElement" HorizontalAlignment="Center" VerticalAlignment="Bottom" AreTransportControlsEnabled="True" Margin="15,0,15,0">
+        <Image Stretch="Fill"  x:Name="SongThumb" HorizontalAlignment="Center" Height="176" VerticalAlignment="Bottom" Width="576"/>
+        <Rectangle Fill="{StaticResource ImageBrush}" Height="180" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Width="576"/>
+        <RelativePanel Width="576" Height="80" VerticalAlignment="Bottom" Margin="0,0,0,100">
+            <TextBlock x:Name="CurrentName" Text="Current Playing Song Name" HorizontalAlignment="Stretch" Margin="10,10,-9.8,-9.8" VerticalAlignment="Stretch"/>
+            <TextBlock x:Name="CurrentArtist" FontSize="10" Text="Artist Name" Margin="10,34,-11.8,-33.4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Tapped="CurrentArtist_Tapped"/>
+            <TextBlock x:Name="CurrentAlbum" FontSize="10" Text="Album Name" Margin="10,53,-7.2,-50.8" Tapped="CurrentAlbum_Tapped"/>
+        </RelativePanel>
+        <MediaPlayerElement Height="100" x:Name="mediaElement" HorizontalAlignment="Center" VerticalAlignment="Bottom" AreTransportControlsEnabled="True">
             <MediaPlayerElement.TransportControls>
                 <MediaTransportControls     IsCompact="False"
                                             IsNextTrackButtonVisible="True"
@@ -90,6 +114,7 @@
                                             IsPlaybackRateEnabled="True"/>
             </MediaPlayerElement.TransportControls>
         </MediaPlayerElement>
+
         <ContentDialog
             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -102,7 +127,7 @@
                 <TextBlock 
                     Text="Name of Playlist" 
                     TextWrapping="Wrap" />
-                <TextBox Name="PlaylistName" />
+                <TextBox x:Name="PlaylistName" />
             </StackPanel>
 
         </ContentDialog>
@@ -122,8 +147,8 @@
                     <GridView.ItemTemplate>
                         <DataTemplate x:DataType="model:Playlist">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="1500">
-                                <TextBlock MaxLines="1" Width="300" TextAlignment="Left" TextWrapping="Wrap" Text="{x:Bind Name}" Margin="10,10,10,10"/>
-                                <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
+                                <TextBlock MaxLines="1" Width="300" TextAlignment="Left" TextWrapping="Wrap" Text="{x:Bind Path=Name}" Margin="10,10,10,10"/>
+                                <TextBlock Visibility="Collapsed" Text="{x:Bind Path=Path}"/>
                             </StackPanel>
                         </DataTemplate>
                     </GridView.ItemTemplate>
@@ -134,7 +159,23 @@
                     </GridView.ItemsPanel>
                 </GridView>
             </StackPanel>
-
+        </ContentDialog>
+        <ContentDialog
+            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            Title="Sleep Timer"
+            x:Name="TimerDialog"
+            PrimaryButtonText="Start"
+            CloseButtonText="Cancel"
+            DefaultButton="Primary" d:IsHidden="True">
+            <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,10,0,0">
+                <TextBlock 
+                    x:Name="TImerInfo"
+                    Text="Select amount of time after which music will stop playing." 
+                    TextWrapping="Wrap" />
+                <ComboBox x:Name="TimerSelector" Width="100" Margin="0,10,0,0"></ComboBox>
+                <Button Visibility="Collapsed" Margin="0,10,0,0" Name="StopTimer" Content="Stop Timer" Click="StopTimer_Click"/>
+            </StackPanel>
         </ContentDialog>
         <ContentDialog
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -145,14 +186,14 @@
         DefaultButton="Primary" d:IsHidden="True">
 
             <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                <ListView x:Name="PlaylistSongs" SelectionMode="Single">
+                <ListView x:Name="PlaylistSongs" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="PlaylistSongs_ItemClick">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="model:MediaFile">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="1500">
-                                <Image Source="{x:Bind Thumb.Source}" Height="32" Width="32" HorizontalAlignment="Left"/>
-                                <TextBlock Width="300" MaxLines="1" TextAlignment="Left" TextWrapping="Wrap" Text="{x:Bind Title}" Margin="10,10,10,10"/>
-                                <TextBlock Visibility="Collapsed" Text="{x:Bind Name}"/>
-                                <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
+                                <Image Source="{x:Bind Path=Thumb.Source}" Height="32" Width="32" HorizontalAlignment="Left"/>
+                                <TextBlock Width="300" MaxLines="1" TextAlignment="Left" TextWrapping="Wrap" Text="{x:Bind Path=Title}" Margin="10,10,10,10"/>
+                                <TextBlock Visibility="Collapsed" Text="{x:Bind Path=Name}"/>
+                                <TextBlock Visibility="Collapsed" Text="{x:Bind Path=Path}"/>
                             </StackPanel>
                         </DataTemplate>
                     </ListView.ItemTemplate>
@@ -160,5 +201,6 @@
             </StackPanel>
 
         </ContentDialog>
+        <ProgressRing x:Name="MusicProgressRing" HorizontalAlignment="Center" VerticalAlignment="Center" Width="110" Height="110" IsActive="True"/>
     </Grid>
 </Page>

@@ -11,6 +11,7 @@ namespace Argon.Model
     {
         private string album;
         private string artist;
+        private List<string> genre;
         public string Album
         {
             get { return this.album; }
@@ -20,6 +21,11 @@ namespace Argon.Model
         {
             get { return this.artist; }
             set { this.artist = value; }
+        }
+        public List<string> Genre
+        {
+            get { return genre; }
+            set { this.genre = value; }
         }
     }
 }

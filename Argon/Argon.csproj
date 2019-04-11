@@ -130,6 +130,7 @@
     <Compile Include="DisplayPlaylist.xaml.cs">
       <DependentUpon>DisplayPlaylist.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Library\StringOperations.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -158,6 +159,9 @@
     <Compile Include="sublibrary\SubtitleEntry.cs" />
     <Compile Include="Subtitle.xaml.cs">
       <DependentUpon>Subtitle.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SettingsPage.xaml.cs">
+      <DependentUpon>SettingsPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Videos.xaml.cs">
       <DependentUpon>Videos.xaml</DependentUpon>
@@ -245,6 +249,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Subtitle.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SettingsPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

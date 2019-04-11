@@ -21,6 +21,8 @@ using Windows.Media.Playlists;
 using System.Diagnostics;
 using Windows.Media.Playback;
 using System.Threading.Tasks;
+using Argon.Library;
+using System.Threading;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -32,24 +34,34 @@ namespace Argon
     public sealed partial class Music : Page
     {
         ApplicationDataContainer local;
-        List<string> musicFormat = new List<string>() { ".mp3", ".wav"};
+        List<string> musicFormat = new List<string>() { ".mp3", ".wav" };
         List<Model.Playlist> PlaylistsList = new List<Model.Playlist>();
         Model.Playlist clickedPlaylist;
         IReadOnlyList<StorageFile> fileList;
         List<AudioFile> songFileList = new List<AudioFile>();
         List<AudioFile> queue = new List<AudioFile>();
         int currentPlaying;
+        HashSet<string> artistSet = new HashSet<string>();
+        HashSet<string> genreSet = new HashSet<string>();
+        List<string> autoItems = new List<string>();
+        private Timer timer;
+        string[] TimerMinutes = { "10 minutes", "20 minutes", "30 minutes", "40 minutes", "50 minutes", "60 minutes" };
         public Music()
         {
             this.InitializeComponent();
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
             local = ApplicationData.Current.LocalSettings;
-            
+
             LoadAudios();
             LoadPlaylists();
             LoadPlaylistsView();
+            MusicPivot.Visibility = Visibility.Visible;
+            MusicProgressRing.IsActive = false;
+            TimerSelector.ItemsSource = TimerMinutes;
+            TimerSelector.SelectedIndex = 0;
         }
 
+        //Loads playlist view.
         private async void LoadPlaylistsView()
         {
             PlaylistList1.Items.Clear();
@@ -70,6 +82,7 @@ namespace Argon
             }
         }
 
+        //Responsible for loading playlists form storage device.
         private async void LoadPlaylists()
         {
             StorageFolder sf = KnownFolders.MusicLibrary;
@@ -87,10 +100,11 @@ namespace Argon
             }
         }
 
+        //Handels click event for browse button.
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var picker = new Windows.Storage.Pickers.FileOpenPicker();
-            foreach(var i in musicFormat)
+            foreach (var i in musicFormat)
                 picker.FileTypeFilter.Add(i);
             StorageFile file = await picker.PickSingleFileAsync();
             if (file != null)
@@ -101,10 +115,11 @@ namespace Argon
             }
         }
 
+        //handels click event for add library button.
         private async void AddLibraryButton_Click(object sender, RoutedEventArgs e)
         {
             var picker = new Windows.Storage.Pickers.FolderPicker();
-            foreach(var i in musicFormat)
+            foreach (var i in musicFormat)
                 picker.FileTypeFilter.Add(i);
             StorageFolder folder = await picker.PickSingleFolderAsync();
             if (folder != null)
@@ -118,6 +133,7 @@ namespace Argon
             LoadAudios();
         }
 
+        //Function to prepare search index and list of albums.
         public void LoadAlbums()
         {
             AlbumListView.Items.Clear();
@@ -127,15 +143,17 @@ namespace Argon
                 foreach (var x in albumList)
                 {
                     AlbumListView.Items.Add(x.Album);
+                    autoItems.Add("(Album) " + x.Album);
                 }
             }
             else
             {
                 Debug.WriteLine("Got null as filelist");
             }
-            
+
         }
 
+        //Function to prepare search index and list of artists.
         public void LoadArtists()
         {
             ArtistListView.Items.Clear();
@@ -144,7 +162,16 @@ namespace Argon
                 var artistList = songFileList.GroupBy(x => x.Artist).Select(g => g.First());
                 foreach (var x in artistList)
                 {
-                    ArtistListView.Items.Add(x.Artist);
+                    string[] artistsList = x.Artist.Split(new char[] { ',', '-' });
+                    foreach (var y in artistsList)
+                    {
+                        artistSet.Add(y.Trim());
+                    }
+                }
+                foreach (string artistName in artistSet)
+                {
+                    ArtistListView.Items.Add(artistName);
+                    autoItems.Add("(Artist) " + artistName);
                 }
             }
             else
@@ -154,6 +181,30 @@ namespace Argon
 
         }
 
+        //Function to prepare search index and list of generes.
+        public void LoadGenre()
+        {
+            GenreListView.Items.Clear();
+            if (songFileList != null)
+            {
+                foreach (AudioFile af in songFileList)
+                {
+                    Debug.WriteLine("Reading Genres:");
+                    foreach (string gn in af.Genre)
+                    {
+                        genreSet.Add(gn);
+                        Debug.WriteLine(gn);
+                    }
+                }
+                foreach (string gn in genreSet)
+                {
+                    GenreListView.Items.Add(gn);
+                    autoItems.Add("(Genre) " + gn);
+                }
+            }
+        }
+
+        //Recursive function for scanning all sub folders, also prepares search index for songs.
         public async Task LoadFromFolder(StorageFolder storageFolder)
         {
             IReadOnlyList<StorageFile> fileList = await storageFolder.GetFilesAsync();
@@ -175,18 +226,27 @@ namespace Argon
                             i.Source = bitmapImage;
                             o1.Thumb = i;
                             o1.Title = f.Name;
-                            o1.Album = "Unknown";
-                            o1.Artist = "Unknown";
                             if (musicProperties.Title != "")
                                 o1.Title = musicProperties.Title;
-                            if(musicProperties.Album != "")
+                            if (musicProperties.Album != "")
                                 o1.Album = musicProperties.Album;
-                            if(musicProperties.Artist != "")
-                                o1.Artist = musicProperties.Artist;
+                            string[] contributingArtistsKey = { "System.Music.Artist" };
+                            IDictionary<string, object> contributingArtistsProperty = await musicProperties.RetrievePropertiesAsync(contributingArtistsKey);
+                            string[] contributingArtists = contributingArtistsProperty["System.Music.Artist"] as string[];
+                            o1.Artist = "";
+                            if (contributingArtists != null)
+                            {
+                                foreach (string contributingArtist in contributingArtists)
+                                {
+                                    o1.Artist += contributingArtist;
+                                }
+                            }
+                            o1.Genre = musicProperties.Genre.ToList();
                             o1.Name = f.Name;
                             o1.Path = f.Path;
                             SongList.Items.Add(o1);
                             songFileList.Add(o1);
+                            autoItems.Add("(Song) " + o1.Name);
                         }
                     }
                 }
@@ -199,8 +259,10 @@ namespace Argon
             }
         }
 
+        //Responsible for loading audio files from library.
         public async void LoadAudios()
         {
+           
             local.Values["lastState"] = "audio";
             SongList.Items.Clear();
             StorageFolder sf = KnownFolders.MusicLibrary;
@@ -217,37 +279,41 @@ namespace Argon
             }
             LoadAlbums();
             LoadArtists();
+            LoadGenre();
         }
 
+        //Handles click event of song in main songs list.
         private async void SongList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            Windows.Media.Playback.MediaPlaybackState i;
             StorageFile storageFile;
             MediaFile file = (MediaFile)e.ClickedItem;
             storageFile = await StorageFile.GetFileFromPathAsync(file.Path);
             mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
             queue.Clear();
-            foreach(var af in songFileList)
+            bool start = false;
+            foreach (var af in songFileList)
             {
-                queue.Add(af);
+                if (start == false && file.Name == af.Name)
+                {
+                    start = true;
+                }
+                if (start)
+                    queue.Add(af);
             }
             currentPlaying = queue.IndexOf((AudioFile)e.ClickedItem);
             mediaElement.AutoPlay = true;
             mediaElement.MediaPlayer.Play();
+            Update_CurrentStatus((AudioFile)file);
         }
 
-        private void MusicNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
-        {
-
-        }
-
+        //When adding a song to new playlist.
         private async void NewPlaylist_click(object sender, RoutedEventArgs e)
         {
             var buttonTag = ((Button)sender).Tag.ToString();
             Debug.WriteLine(buttonTag);
             PlaylistList.Items.Clear();
             ContentDialogResult result = await NewPlayListDialog.ShowAsync();
-            if(result == ContentDialogResult.Primary)
+            if (result == ContentDialogResult.Primary)
             {
                 Windows.Media.Playlists.Playlist playlist = new Windows.Media.Playlists.Playlist();
                 StorageFolder sf = KnownFolders.MusicLibrary;
@@ -263,11 +329,12 @@ namespace Argon
                 }
                 catch (Exception error)
                 {
-                    Console.WriteLine(error.StackTrace);
+                    Debug.WriteLine(error.StackTrace);
                 }
             }
         }
 
+        //When adding a song to existing playlist.
         private async void ExistingPlaylist_Click(object sender, RoutedEventArgs e)
         {
             var buttonTag = ((Button)sender).Tag.ToString();
@@ -281,7 +348,7 @@ namespace Argon
             Debug.WriteLine("Ends for loop:");
             ExistingPlayListDialog.IsPrimaryButtonEnabled = false;
             ContentDialogResult result = await ExistingPlayListDialog.ShowAsync();
-            
+
             if (result == ContentDialogResult.Primary)
             {
                 Windows.Media.Playlists.Playlist playlist = new Windows.Media.Playlists.Playlist();
@@ -295,7 +362,7 @@ namespace Argon
                 playlist.Files.Add(storageFile);
                 try
                 {
-                    StorageFile savedFile = await playlist.SaveAsAsync(sf, playlistFile.Name.Replace(".wpl",""), collisionOption, format);
+                    StorageFile savedFile = await playlist.SaveAsAsync(sf, playlistFile.Name.Replace(".wpl", ""), collisionOption, format);
                     Debug.WriteLine("Edited successfully");
                 }
                 catch (Exception error)
@@ -307,32 +374,36 @@ namespace Argon
             }
         }
 
-        private async void PlayButton_Click(object sender, RoutedEventArgs e)
+        //Handles click event of play btton beside the playlist name in playlist list.
+        private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
             queue.Clear();
             var buttonTag = ((Button)sender).Tag.ToString();
             if (fileList != null)
             {
-                var fileToPlay = fileList.Where(f => f.Name == buttonTag).FirstOrDefault();
-                if (fileToPlay != null)
-                {
-                    Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToPlay);
-                    MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
-                    foreach (var f in playlist.Files)
-                    {
-                        var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
-                        queue.Add(af);
-                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
-                    }
-                    if (mediaPlaybackList.Items.Count != 0)
-                    {
-                        mediaElement.Source = mediaPlaybackList;
-                        mediaElement.MediaPlayer.Play();
-                    }
-                }
+                Play_From_Playlist(buttonTag);
+
             }
         }
 
+        //Updates the current panel above mediaelement and background when track changes.
+        private async void Track_Changes(MediaPlaybackList sender, CurrentMediaPlaybackItemChangedEventArgs e)
+        {
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                if (!mediaElement.MediaPlayer.IsLoopingEnabled)
+                {
+                    currentPlaying++;
+                    currentPlaying %= queue.Count();
+                }
+
+                AudioFile af = queue[currentPlaying];
+                Update_CurrentStatus(af);
+
+            });
+        }
+
+        //Handels playlist list item click event to show songds of the playlist in dialog box.
         private async void PlaylistList_ItemClick(object sender, ItemClickEventArgs e)
         {
             queue.Clear();
@@ -344,12 +415,9 @@ namespace Argon
             foreach (var s in playlist.Files)
             {
                 var af = songFileList.Where(sf => sf.Name == s.Name).FirstOrDefault();
-                queue.Add(af);
                 const uint size = 100;
                 using (StorageItemThumbnail thumbnail = await s.GetThumbnailAsync(thumbnailMode, size))
                 {
-                    // Also verify the type is ThumbnailType.Image (album art) instead of ThumbnailType.Icon 
-                    // (which may be returned as a fallback if the file does not provide album art) 
                     if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
                     {
                         BitmapImage bitmapImage = new BitmapImage();
@@ -393,48 +461,277 @@ namespace Argon
             }
             else if (contentDialogResult == ContentDialogResult.Secondary)
             {
-
-                if (fileToShow != null)
+                Play_From_Playlist(playlistToShow.Name);
+            }
+        }
+       
+        //Handels commadbar button click event for queue button.
+        private async void QueueButton_Click(object sender, RoutedEventArgs e)
+        {
+            PlaylistSongs.Items.Clear();
+            foreach (AudioFile af in queue)
+            {
+                PlaylistSongs.Items.Add(af);
+            }
+            PlaylistSongs.SelectedIndex = currentPlaying;
+            PlaylistSongs.CanDragItems = true;
+            PlaylistSongs.CanReorderItems = true;
+            PlaylistSongs.AllowDrop = true;
+            SonglistView.IsPrimaryButtonEnabled = true;
+            SonglistView.PrimaryButtonText = "Save";
+            ContentDialogResult result = await SonglistView.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                queue.Clear();
+                foreach (AudioFile af in PlaylistSongs.Items)
                 {
-                    Windows.Media.Playlists.Playlist playlistToPlay = await Windows.Media.Playlists.Playlist.LoadAsync(fileToShow);
+                    queue.Add(af);
+                }
+            }
+        }
+
+        //Handles click event of shuffle button
+        private async void ShuffleButton_Click(object sender, RoutedEventArgs e)
+        {
+            var buttonTag = ((Button)sender).Tag.ToString();
+            if (fileList != null)
+            {
+                var fileToPlay = fileList.Where(f => f.Name == buttonTag).FirstOrDefault();
+                if (fileToPlay != null)
+                {
+                    Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToPlay);
                     MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
-                    foreach (var f in playlist.Files)
+                    queue.Clear();
+                    foreach (var item in playlist.Files)
                     {
-                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(f)));
+                        var af = songFileList.Where(sf => sf.Name == item.Name).FirstOrDefault();
+                        queue.Add(af);
+                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(item)));
                     }
-                    if (mediaPlaybackList.Items.Count != 0)
+
+                    mediaPlaybackList.ShuffleEnabled = true;
+                    IReadOnlyList<MediaPlaybackItem> items = mediaPlaybackList.ShuffledItems;
+                    MediaPlaybackList newplaybacklist = new MediaPlaybackList();
+                    foreach (var item in items)
                     {
-                        mediaElement.Source = mediaPlaybackList;
+                        newplaybacklist.Items.Add(item);
+                    }
+                    if (newplaybacklist.Items.Count != 0)
+                    {
+                        mediaElement.Source = newplaybacklist;
                         mediaElement.MediaPlayer.Play();
                     }
                 }
             }
         }
 
-        private async void AlbumListView_ItemClick(object sender, ItemClickEventArgs e)
+        //Handels playlist name clicked event when adding a song to existing playlist.
+        private void PlaylistList_ItemClick_1(object sender, ItemClickEventArgs e)
         {
-            PlaylistSongs.Items.Clear();
-            string albumName= (string)e.ClickedItem;
-            SonglistView.Title = albumName;
-            SonglistView.IsPrimaryButtonEnabled = false;
-            var listToShow = songFileList.Where(x => x.Album == albumName);
-            List<StorageFile> filesToPlay = new List<StorageFile>();
-            
-            foreach(AudioFile af in listToShow)
+            clickedPlaylist = (Model.Playlist)e.ClickedItem;
+            ExistingPlayListDialog.IsPrimaryButtonEnabled = true;
+        }
+
+        ////handels item click event of Album list
+        private void AlbumListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            string albumName = (string)e.ClickedItem;
+            Load_AlbumWindow(albumName);
+        }
+
+        //handels item click event of artist list
+        private void ArtistListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            string artistName = (string)e.ClickedItem;
+            Load_ArtistWindow(artistName);
+        }
+
+        //handels item click event of genre list
+        private void GenreListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            string genreName = (string)e.ClickedItem;
+            Load_GenreWindow(genreName);
+        }
+
+        //Handels query submitted event of search box
+        private void AutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var Auto = (AutoSuggestBox)sender;
+            var Suggestion = autoItems.Where(p => p.Contains(Auto.Text, StringComparison.OrdinalIgnoreCase)).ToArray();
+            Auto.ItemsSource = Suggestion;
+        }
+
+        ////Handels item choosen event of search box
+        private async void AutoSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            string item = (string)args.SelectedItem;
+            string name = item;
+            string type = null;
+            if (name.Contains("(Song) "))
             {
-                PlaylistSongs.Items.Add(af);
-                StorageFile sf = await StorageFile.GetFileFromPathAsync(af.Path);
-                filesToPlay.Add(sf);
-            }
-            PlaylistSongs.CanDragItems = false;
-            PlaylistSongs.CanReorderItems = false;
-            PlaylistSongs.AllowDrop = false;
-            ContentDialogResult result = await SonglistView.ShowAsync();
-            if(result == ContentDialogResult.Secondary)
-            {
-                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                type = "(Song) ";
+                name = StringOperations.TrimSearchString(type, name);
+                AudioFile af = songFileList.Where(s => s.Name == name).FirstOrDefault();
+                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
+                mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+                mediaElement.MediaPlayer.Play();
                 queue.Clear();
-                foreach (var f in filesToPlay)
+                queue.Add(af);
+                Update_CurrentStatus(af);
+            }
+            else if (name.Contains("(Album) "))
+            {
+                type = "(Album) ";
+                name = StringOperations.TrimSearchString(type, name);
+                Load_AlbumWindow(name);
+            }
+            else if (name.Contains("(Artist) "))
+            {
+                type = "(Artist) ";
+                name = StringOperations.TrimSearchString(type, name);
+                Load_ArtistWindow(name);
+            }
+            else if (name.Contains("(Genre) "))
+            {
+                type = "(Genre) ";
+                name = StringOperations.TrimSearchString(type, name);
+                Load_GenreWindow(name);
+            }
+        }
+
+        //Handels text changed event of search box
+        private void AutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            var Auto = (AutoSuggestBox)sender;
+            var Suggestion = autoItems.Where(p => p.Contains(Auto.Text, StringComparison.OrdinalIgnoreCase)).ToArray();
+            Auto.ItemsSource = Suggestion;
+        }
+
+        //Handles click events for items in Playlist, queue, album, artist dialogs.
+        private async void PlaylistSongs_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            AudioFile af = (AudioFile)e.ClickedItem;
+            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
+            Update_CurrentStatus(af);
+            mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+            mediaElement.MediaPlayer.Play();
+            queue.Clear();
+            queue.Add(af);
+        }
+
+        //Handels click event of album name on mediaplayer element.
+        private void CurrentArtist_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (CurrentArtist.Text != "Artist Name")
+            {
+                Load_ArtistWindow(CurrentArtist.Text);
+            }
+
+        }
+
+        //Handels click event of album name on mediaplayer element.
+        private void CurrentAlbum_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (CurrentAlbum.Text != "Album Name")
+            {
+                Load_AlbumWindow(CurrentAlbum.Text);
+            }
+        }
+
+        //Handels click event of sleep timer commandbar button.
+        private async void SleepTimer_Click(object sender, RoutedEventArgs e)
+        {
+            ContentDialogResult result = await TimerDialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                int minutes = (TimerSelector.SelectedIndex + 1) * 600000;
+                TImerInfo.Text = "Timer Set for " + TimerMinutes[TimerSelector.SelectedIndex] + ".";
+                Debug.WriteLine("Timer is set for " + minutes + "ms");
+                if (timer == null)
+                {
+                    timer = new Timer(Stop_MediaPLayer, null, minutes, Timeout.Infinite);
+                }
+                else
+                {
+                    timer.Dispose();
+                    timer = new Timer(Stop_MediaPLayer, null, 5000, Timeout.Infinite);
+                }
+                StopTimer.Visibility = Visibility.Visible;
+                TimerSelector.Visibility = Visibility.Collapsed;
+                TimerDialog.IsPrimaryButtonEnabled = false;
+                TimerSelector.IsEnabled = false;
+            }
+        }
+
+        //Stop the timer when button is clicked.
+        private void StopTimer_Click(object sender, RoutedEventArgs e)
+        {
+            if (timer != null)
+            {
+                timer.Dispose();
+                StopTimer.Visibility = Visibility.Collapsed;
+                TImerInfo.Text = "Select amount of time after which music will stop playing.";
+                TimerSelector.IsEnabled = true;
+                TimerSelector.Visibility = Visibility.Visible;
+                TimerDialog.IsPrimaryButtonEnabled = true;
+            }
+        }
+
+        //Loads artist window.
+        private void Load_ArtistWindow(string artistName)
+        {
+            var listToShow = songFileList.Where(x => x.Artist.Contains(artistName)).ToList();
+            Play_From_List(artistName, listToShow);
+        }
+
+        //loads album window
+        private void Load_AlbumWindow(string albumName)
+        {
+            var listToShow = songFileList.Where(x => x.Album == albumName).ToList();
+            Play_From_List(albumName, listToShow);
+        }
+
+        //loads genre window
+        private void Load_GenreWindow(string genreName)
+        {
+            var listToShow = songFileList.Where(x => x.Genre.Contains(genreName)).ToList();
+            Play_From_List(genreName, listToShow);
+        }
+
+        //Stops the media element from playing song.
+        public async void Stop_MediaPLayer(Object state)
+        {
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                if (mediaElement.MediaPlayer != null)
+                {
+                    mediaElement.MediaPlayer.Pause();
+                }
+                StopTimer_Click(null, null);
+
+            });
+        }
+
+        //Updates the current playing track info panel above mediaelement and background.
+        public void Update_CurrentStatus(AudioFile audioFile)
+        {
+            SongThumb.Source = audioFile.Thumb.Source;
+            MusicBackground.Source = audioFile.Thumb.Source;
+            CurrentName.Text = audioFile.Name;
+            CurrentArtist.Text = audioFile.Artist;
+            CurrentAlbum.Text = audioFile.Album;
+        }
+
+        // Play list of songs from playlist file.
+        private async void Play_From_Playlist(string name)
+        {
+            var fileToPlay = fileList.Where(f => f.Name == name).FirstOrDefault();
+            if (fileToPlay != null)
+            {
+                queue.Clear();
+                Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToPlay);
+                MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
+                foreach (var f in playlist.Files)
                 {
                     var af = songFileList.Where(sf => sf.Name == f.Name).FirstOrDefault();
                     queue.Add(af);
@@ -443,19 +740,21 @@ namespace Argon
                 if (mediaPlaybackList.Items.Count != 0)
                 {
                     mediaElement.Source = mediaPlaybackList;
+                    mediaPlaybackList.CurrentItemChanged += new TypedEventHandler<MediaPlaybackList, CurrentMediaPlaybackItemChangedEventArgs>(Track_Changes);
                     mediaElement.MediaPlayer.Play();
+                    currentPlaying = -1;
                 }
             }
         }
 
-        private async void ArtistListView_ItemClick(object sender, ItemClickEventArgs e)
+        //plays songs from a simple list.
+        private async void Play_From_List(string title, List<AudioFile> listToShow)
         {
             PlaylistSongs.Items.Clear();
-            string artistName = (string)e.ClickedItem;
-            SonglistView.Title = artistName;
+            SonglistView.Title = title;
             SonglistView.IsPrimaryButtonEnabled = false;
-            var listToShow = songFileList.Where(x => x.Artist == artistName);
             List<StorageFile> filesToPlay = new List<StorageFile>();
+
             foreach (AudioFile af in listToShow)
             {
                 PlaylistSongs.Items.Add(af);
@@ -479,73 +778,38 @@ namespace Argon
                 if (mediaPlaybackList.Items.Count != 0)
                 {
                     mediaElement.Source = mediaPlaybackList;
+                    mediaPlaybackList.CurrentItemChanged += new TypedEventHandler<MediaPlaybackList, CurrentMediaPlaybackItemChangedEventArgs>(Track_Changes);
                     mediaElement.MediaPlayer.Play();
+                    currentPlaying = -1;
                 }
             }
         }
 
-        private async void QueueButton_Click(object sender, RoutedEventArgs e)
+        private async void PlaylistSongs_ItemClick(object sender, ItemClickEventArgs e)
         {
-            PlaylistSongs.Items.Clear();
-            foreach(AudioFile af in queue)
-            {
-                PlaylistSongs.Items.Add(af);
-            }
-            PlaylistSongs.SelectedIndex = currentPlaying;
-            PlaylistSongs.CanDragItems = true;
-            PlaylistSongs.CanReorderItems = true;
-            PlaylistSongs.AllowDrop = true;
-            SonglistView.IsPrimaryButtonEnabled = true;
-            SonglistView.PrimaryButtonText = "Save";
-            ContentDialogResult result = await SonglistView.ShowAsync();
-            if(result == ContentDialogResult.Primary)
-            {
-                queue.Clear();
-                foreach(AudioFile af in PlaylistSongs.Items)
-                {
-                    queue.Add(af);
-                }
-            }
+            AudioFile af = (AudioFile)e.ClickedItem;
+            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(af.Path);
+            Update_CurrentStatus(af);
+            mediaElement.Source = MediaSource.CreateFromStorageFile(storageFile);
+            mediaElement.MediaPlayer.Play();
+            queue.Clear();
+            queue.Add(af);
         }
 
-        private void PlaylistList_ItemClick_1(object sender, ItemClickEventArgs e)
+        public void Update_CurrentStatus(AudioFile audioFile)
         {
-            clickedPlaylist = (Model.Playlist)e.ClickedItem;
-            ExistingPlayListDialog.IsPrimaryButtonEnabled = true;
-        }
 
-        private async void ShuffleButton_Click(object sender, RoutedEventArgs e)
-        {
-            var buttonTag = ((Button)sender).Tag.ToString();
-            if (fileList != null)
-            {
-                var fileToPlay = fileList.Where(f => f.Name == buttonTag).FirstOrDefault();
-                if (fileToPlay != null)
-                {
-                    Windows.Media.Playlists.Playlist playlist = await Windows.Media.Playlists.Playlist.LoadAsync(fileToPlay);
-                    MediaPlaybackList mediaPlaybackList = new MediaPlaybackList();
-                    queue.Clear();
-                    foreach (var item in playlist.Files)
-                    {
-                        var af = songFileList.Where(sf => sf.Name == item.Name).FirstOrDefault();
-                        queue.Add(af);
-                        mediaPlaybackList.Items.Add(new MediaPlaybackItem(MediaSource.CreateFromStorageFile(item)));
-                    }
-                    
-                    mediaPlaybackList.ShuffleEnabled = true;
-                    IReadOnlyList<MediaPlaybackItem> items = mediaPlaybackList.ShuffledItems;
-                    MediaPlaybackList newplaybacklist = new MediaPlaybackList();
-                    foreach (var item in items)
-                    {
-                        newplaybacklist.Items.Add(item);
-                    }
-                    if (newplaybacklist.Items.Count != 0)
-                    {
-                        mediaElement.Source = newplaybacklist;
-                        mediaElement.MediaPlayer.Play();
-                    }
-                }
-            }
+            if (audioFile.Name == null)
+                audioFile.Name = "Unknown";
+            if (audioFile.Artist == null)
+                audioFile.Artist = "Unknown";
+            if (audioFile.Album == null)
+                audioFile.Album = "Unknown";
+            SongThumb.Source = audioFile.Thumb.Source;
+            MusicBackground.Source = audioFile.Thumb.Source;
+            CurrentName.Text = audioFile.Name;
+            CurrentArtist.Text = audioFile.Artist;
+            CurrentAlbum.Text = audioFile.Album;
         }
     }
 }

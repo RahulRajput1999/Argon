@@ -17,6 +17,7 @@ using Windows.Storage.FileProperties;
 using Windows.UI.Xaml.Media.Imaging;
 using Argon.Model;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -25,10 +26,25 @@ namespace Argon
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
+    /// 
+
+    class Comparator : IComparer<VideoFile>
+    {
+        public int Compare(VideoFile x, VideoFile y)
+        {
+            if(x==null || y == null)
+            {
+                return 0;
+            }
+            return x.Title.CompareTo(y.Title);
+        }
+    }
     public sealed partial class Videos : Page
     {
         ApplicationDataContainer local;
         List<string> videoFormat = new List<string>() { ".mov", ".mp4", ".mkv" };
+        List<string> autoList = new List<string>();
+        List<VideoFile> videoFiles = new List<VideoFile>();
         public Videos()
         {
             this.InitializeComponent();
@@ -115,7 +131,8 @@ namespace Argon
                                 o1.Title = videoProperties.Title;
                             o1.Name = f.Name;
                             o1.Path = f.Path;
-                            FileHolder.Items.Add(o1);
+                            videoFiles.Add((VideoFile)o1);
+                            autoList.Add(o1.Title);
                         }
                     }
                 }
@@ -141,6 +158,53 @@ namespace Argon
                 string token = local.Values[foldnm].ToString();
                 sf = await Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.GetFolderAsync(token);
                 await LoadFromFolder(sf);
+            }
+            Comparator c = new Comparator();
+            Debug.WriteLine("\n\nBefore Sorting the list.\n\n");
+            videoFiles.Sort(c);
+            Debug.WriteLine("\n\nAfter sorting the list and before adding to file holder");
+            foreach (VideoFile vf in videoFiles)
+            {
+                FileHolder.Items.Add(vf);
+                Debug.WriteLine("Adding : " + vf.Title);
+            }
+            Debug.WriteLine("Done");
+            VideoProgressRing.IsActive = false;
+        }
+
+        private void FileHolder_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            Image img = (Image)sender;
+            VideoBackGround.Source = img.Source;
+        }
+
+        private void VideoSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            var Auto = (AutoSuggestBox)sender;
+            var Suggestion = autoList.Where(p => p.Contains(Auto.Text, StringComparison.OrdinalIgnoreCase)).ToArray();
+            Auto.ItemsSource = Suggestion;
+        }
+
+        private void VideoSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var Auto = (AutoSuggestBox)sender;
+            var Suggestion = autoList.Where(p => p.Contains(Auto.Text, StringComparison.OrdinalIgnoreCase)).ToArray();
+            Auto.ItemsSource = Suggestion;
+        }
+
+        private void VideoSearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            string item = (string)args.SelectedItem;
+            var vf = videoFiles.Where(s => s.Title == item).FirstOrDefault();
+            var page = grid.Parent as Videos;
+            var parent = page.Parent as Frame;
+            var superNav = parent.Parent as NavigationView;
+            var superGrid = superNav.Parent as Grid;
+            var superPage = superGrid.Parent as MainPage;
+            var superParent = superPage.Parent as Frame;
+            if (superParent != null)
+            {
+                superParent.Navigate(typeof(Player), vf);
             }
         }
     }
