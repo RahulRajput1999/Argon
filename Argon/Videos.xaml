@@ -12,23 +12,34 @@
         <DataTemplate x:Key="Media" x:DataType="model:MediaFile">
             <StackPanel x:Name="mypanel" Height="200" Width="250">
                 <Border Height="150" Width="250" BorderThickness="5,5,5,5" Background="Black">
-                    <Image Source="{x:Bind Thumb.Source}" Height="150" Width="250"/>
+                    <Image Source="{x:Bind Thumb.Source}" Height="150" Width="250" PointerEntered="FileHolder_PointerEntered"/>
                 </Border>
                 <TextBlock MaxLines="2" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Bind Title}" Margin="0,0,0,10"/>
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Name}"/>
                 <TextBlock Visibility="Collapsed" Text="{x:Bind Path}"/>
             </StackPanel>
         </DataTemplate>
+        <AcrylicBrush x:Key="BackgroundImageBrush" BackgroundSource="Backdrop"
+            TintOpacity="0.4" TintColor="#FF000000" FallbackColor="Black" />
     </Page.Resources>
     <Grid Name="grid">
+        <Image x:Name="VideoBackGround" Stretch="Fill" Width="1500" Height="955"/>
+        <Rectangle Opacity="1" Fill="{StaticResource BackgroundImageBrush}" Height="960" VerticalAlignment="Top" Margin="0,40,0,0" HorizontalAlignment="Stretch"/>
         <CommandBar DefaultLabelPosition="Right">
-            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click"></AppBarButton>
-            <AppBarButton Icon="Add" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"></AppBarButton>
             <CommandBar.SecondaryCommands>
-                <AppBarButton Icon="Account" x:Name="About" Label="About"></AppBarButton>
+                <AppBarButton Icon="Account" x:Name="About" Label="About"/>
             </CommandBar.SecondaryCommands>
+            <AppBarButton Icon="Folder" x:Name="BrowseButton" Label="Browse Videos" Click="BrowseButton_Click"/>
+            <AppBarButton Icon="Add" x:Name="AddLibraryButton" Label="Add Library" Click="AddLibraryButton_Click"/>
         </CommandBar>
-        <GridView Grid.Column="4" ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" Height="877" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/>
+        <AutoSuggestBox x:Name="VideoSearchBox" PlaceholderText="Serch for movies"
+            TextChanged="VideoSearchBox_TextChanged"
+            QueryIcon="Find"
+            QuerySubmitted="VideoSearchBox_QuerySubmitted"
+            SuggestionChosen="VideoSearchBox_SuggestionChosen" Margin="0,40,0,0" HorizontalAlignment="Left" Width="500"/>
+
+        <GridView ItemTemplate="{StaticResource Media}" x:Name="FileHolder" HorizontalAlignment="Center" Margin="0,73,0,0" VerticalAlignment="Top" ItemClick="FileHolder_ItemClick" IsItemClickEnabled="True"/>
+        <ProgressRing x:Name="VideoProgressRing" HorizontalAlignment="Center" VerticalAlignment="Center" Height="110" Width="110" IsActive="True"/>
 
     </Grid>
 </Page>

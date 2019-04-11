@@ -71,7 +71,12 @@ namespace Argon
         {
             if (args.IsSettingsSelected)
             {
-
+                var preNavPageType = ContentFrame.CurrentSourcePageType;
+                var _page = typeof(SettingsPage);
+                if(!(_page is null) && !Type.Equals(preNavPageType, _page))
+                {
+                    ContentFrame.Navigate(_page);
+                }
             }
             else
             {
