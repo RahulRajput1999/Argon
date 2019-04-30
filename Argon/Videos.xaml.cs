@@ -65,7 +65,6 @@ namespace Argon
         private string currentPath = Windows.ApplicationModel.Package.Current.InstalledLocation.Path;
         private List<string> languages = new List<string>();
         private bool isConfigRead = false;
-        private ObservableCollection<SubtitleEntry> collection = new ObservableCollection<SubtitleEntry>();
 
         public Videos()
         {
@@ -75,30 +74,25 @@ namespace Argon
             LoadVideos();
             
         }
-
-        public ObservableCollection<SubtitleEntry> Collection
-        {
-            get
-            {
-                return this.collection;
-            }
-        }
-
+        
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
         {
             var picker = new Windows.Storage.Pickers.FileOpenPicker();
             foreach(var i in videoFormat)
                 picker.FileTypeFilter.Add(i);
             StorageFile file = await picker.PickSingleFileAsync();
-            var page = grid.Parent as Videos;
-            var parent = page.Parent as Frame;
-            var superNav = parent.Parent as NavigationView;
-            var superGrid = superNav.Parent as Grid;
-            var superPage = superGrid.Parent as MainPage;
-            var superParent = superPage.Parent as Frame;
-            if (file != null && superParent != null)
+            if (file != null)
             {
-                superParent.Navigate(typeof(Player), file);
+                var page = grid.Parent as Videos;
+                var parent = page.Parent as Frame;
+                var superNav = parent.Parent as NavigationView;
+                var superGrid = superNav.Parent as Grid;
+                var superPage = superGrid.Parent as MainPage;
+                var superParent = superPage.Parent as Frame;
+                if (superParent != null)
+                {
+                    superParent.Navigate(typeof(Player), file);
+                }
             }
         }
 
@@ -115,8 +109,8 @@ namespace Argon
                 local.Values["CountVideo"] = tmp + 1;
                 string foldnm = "video" + local.Values["CountVideo"].ToString();
                 local.Values[foldnm] = token;
+                LoadVideos();
             }
-            LoadVideos();
         }
 
         private void FileHolder_ItemClick(object sender, ItemClickEventArgs e)
@@ -285,7 +279,6 @@ namespace Argon
             {
                 string hex;
                 double length;
-                this.Collection.Clear();
 
                 Stream stream = await file.OpenStreamForReadAsync();
                 byte[] result = ComputeMovieHash(stream);
@@ -296,7 +289,6 @@ namespace Argon
                 await Task.Run(() => this.messenger.OSLogIn());
 
                 SearchSubtitlesResponse ssre = null;
-                SubInfo subtitle = null;
                 await Task.Run(() => this.messenger.SearchOS(hex, length, "all", ref ssre));
                 //List<string> subtitles = new List<string>();
                 List<SubInfo> subtitles = new List<SubInfo>();
@@ -307,6 +299,7 @@ namespace Argon
                 }
                 SubtitleComparator c = new SubtitleComparator();
                 subtitles.Sort(c);
+                SubtitleList.Items.Clear();
                 foreach(var x in subtitles)
                 {
                     SubtitleList.Items.Add(x);
@@ -331,9 +324,6 @@ namespace Argon
                     }
 
                 }
-
-
-
             }
         }
 

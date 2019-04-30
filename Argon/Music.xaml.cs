@@ -85,6 +85,7 @@ namespace Argon
         //Responsible for loading playlists form storage device.
         private async void LoadPlaylists()
         {
+            PlaylistsList.Clear();
             StorageFolder sf = KnownFolders.MusicLibrary;
             IReadOnlyList<StorageFile> fileList = await sf.GetFilesAsync();
             List<Windows.Media.Playlists.Playlist> playlists = new List<Windows.Media.Playlists.Playlist>();
@@ -129,8 +130,8 @@ namespace Argon
                 local.Values["CountMusic"] = tmp + 1;
                 string foldnm = "music" + local.Values["CountMusic"].ToString();
                 local.Values[foldnm] = token;
+                LoadAudios();
             }
-            LoadAudios();
         }
 
         //Function to prepare search index and list of albums.
@@ -226,6 +227,7 @@ namespace Argon
                             i.Source = bitmapImage;
                             o1.Thumb = i;
                             o1.Title = f.Name;
+                            o1.Album = "Unknown";
                             if (musicProperties.Title != "")
                                 o1.Title = musicProperties.Title;
                             if (musicProperties.Album != "")
@@ -241,6 +243,8 @@ namespace Argon
                                     o1.Artist += contributingArtist;
                                 }
                             }
+                            if (o1.Artist == "")
+                                o1.Artist = "Unknown";
                             o1.Genre = musicProperties.Genre.ToList();
                             o1.Name = f.Name;
                             o1.Path = f.Path;
@@ -326,6 +330,7 @@ namespace Argon
                 {
                     StorageFile savedFile = await playlist.SaveAsAsync(sf, name, collisionOption, format);
                     LoadPlaylistsView();
+                    LoadPlaylists();
                 }
                 catch (Exception error)
                 {
@@ -418,7 +423,7 @@ namespace Argon
                 const uint size = 100;
                 using (StorageItemThumbnail thumbnail = await s.GetThumbnailAsync(thumbnailMode, size))
                 {
-                    if (thumbnail != null && thumbnail.Type == ThumbnailType.Image)
+                    if (thumbnail != null && (thumbnail.Type == ThumbnailType.Image || thumbnail.Type == ThumbnailType.Icon))
                     {
                         BitmapImage bitmapImage = new BitmapImage();
                         bitmapImage.SetSource(thumbnail);

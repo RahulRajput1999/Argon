@@ -99,15 +99,6 @@ namespace Argon
                         ContentFrame.Navigate(_page);
                     }
                 }
-                else if (item == "3")
-                {
-                    var preNavPageType = ContentFrame.CurrentSourcePageType;
-                    var _page = typeof(Subtitle);
-                    if (!(_page is null) && !Type.Equals(preNavPageType, _page))
-                    {
-                        ContentFrame.Navigate(_page);
-                    }
-                }
             }
             
         }
